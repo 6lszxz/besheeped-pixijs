@@ -25,6 +25,7 @@ function createApp(){
     app.renderer.resize(window.innerWidth,window.innerHeight);
     app.stage.interactive = true;
     init();
+    app.stage.scale.set(systemValue.scaleX,systemValue.scaleY);
 }
 /**
  * 对应用内容进行初始化，包括加载资源、创建游戏舞台、刷新一个棋盘、把默认的羊放到牧场中，创建商店
@@ -116,7 +117,6 @@ class Tile {
         this.y=Y;
         this.itself = new PIXI.Sprite.from(contents[`${this.id}`]);
         this.itself.position.set(systemValue.toMapX(this.x),systemValue.toMapY(this.y));
-        this.itself.scale.set(systemValue.scaleX,systemValue.scaleY);
         this.itself.interactive = true;
         this.itself.zIndex=10;
         gameMap.tileLists.set(`${this.x},${this.y}`,this);
@@ -373,7 +373,7 @@ class shopButton{
             buttonNow.itself.beginFill(0x584783);
             buttonNow.itself.zIndex =10;
             buttonNow.itself.position.set(0,systemValue.toMapY(i===0?i+1:i*2+1));
-            buttonNow.itself.drawRoundedRect(0,0,systemValue.size*8,systemValue.size*1.5);
+            buttonNow.itself.drawRoundedRect(0,0,systemValue.size*6,systemValue.size*1.5);
             shopArea.itself.addChild(buttonNow.itself);
             buttonNow.titleText = new PIXI.Text(`${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`);
             buttonNow.titleText.position.set(10,0);
@@ -401,8 +401,10 @@ class shopButton{
                         buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
                         buttonNow.isBought = true;
                     }
-                    
                 });         
+            }else{
+                buttonNow.titleText.text= `${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`
+                buttonNow.canBeBought = false;
             }
         }
     }
@@ -422,8 +424,8 @@ class shopButton{
  */
 let systemValue={
     size :48,
-    scaleX : 1,
-    scaleY : 1,
+    scaleX : window.innerWidth/1920,
+    scaleY : window.innerHeight/1080,
     pointerNow : '',
     setPointerNow(id){
         systemValue.pointerNow = id;
@@ -445,8 +447,8 @@ let systemValue={
  */
 let gameStage = {
     itself : new PIXI.Container(),
-    positionX : window.innerWidth/20,
-    positionY : window.innerHeight/20,
+    positionX : (window.innerWidth-24*systemValue.size*systemValue.scaleX)/2,
+    positionY : (window.innerHeight-12*systemValue.size*systemValue.scaleY)/2,
     create(){
         this.itself.position.set(this.positionX, this.positionY);
         app.stage.addChild(this.itself);
@@ -469,14 +471,70 @@ let farmArea ={
     itself : new PIXI.Graphics(),
     positionX : 0,
     positionY : 0,
+    endPositionX : systemValue.size *10,
     create(){
         this.itself.beginFill(0x66CCFF);
         this.itself.position.set(this.positionX, this.positionY);
-        this.itself.drawRect(0,0,systemValue.size*15,systemValue.size*18);
+        this.itself.drawRect(0,0,systemValue.size*10,systemValue.size*12);
         this.itself.zIndex = 5;
         gameStage.itself.addChild(this.itself);
     },
 }
+
+let farmInformation ={
+    startX : farmArea.endPositionX+systemValue.size*1,
+    startY : 0,
+    itself : new PIXI.Graphics(),
+    endPositionX :farmArea.endPositionX+systemValue.size*7,
+    endPositionY : systemValue.size*3, 
+    coinBoard : {
+        startX : 10,
+        startY : 10,
+        itself : new PIXI.Text(),
+        coin : 500,
+        create(){
+            this.itself.position.set(this.startX,this.startY);
+            farmInformation.itself.addChild(this.itself);
+            this.itself.text = `金币：${this.coin}`;
+        },
+        change(value){
+            console.log(value);
+            console.log(this.coin)
+            this.coin += value;
+            this.itself.text = `金币：${this.coin}`;
+        }
+    },
+    gameDate :{
+        startX :10,
+        startY : 50,
+        itself : new PIXI.Text(),
+        year : 1,
+        week : 1,
+        create(){
+            this.itself.position.set(this.startX,this.startY);
+            farmInformation.itself.addChild(this.itself);
+            this.itself.text = `第${this.year}年，第${this.week}周`;
+        },
+        pass(){
+            this.week++;
+            if(this.week>52){
+                this.week=1;
+                this.year++;
+            }
+            this.itself.text = `第${this.year}年，第${this.week}周`;
+        }
+    },
+    create() {
+        this.itself.beginFill(0x66CCFF);
+        this.itself.zIndex =5;
+        this.itself.position.set(this.startX,this.startY);
+        this.itself.drawRect(0,0,systemValue.size*6,systemValue.size*3);
+        gameStage.itself.addChild(this.itself);
+        this.coinBoard.create();
+        this.gameDate.create();
+    }
+}
+
 /**
  * 游戏地图，就是那个6*6的格子
  * @type {{itself: PIXI.Graphics, shuffleAll(): void, typeNumbers: Map<any, any>, create(): void, startY: number, startX: number, checkId(*): boolean, fallAndCreate(*, *): void, tileLists: Map<any, any>}}
@@ -491,8 +549,8 @@ let farmArea ={
  * @property checkId 检测棋盘上特定的块个数是否大于等于3
  */
 let gameMap={
-    startX : window.innerWidth/2-50,
-    startY : window.innerHeight/3,
+    startX : farmArea.endPositionX+systemValue.size*1,
+    startY : farmInformation.endPositionY +systemValue.size*1,
     itself : new PIXI.Graphics(),
     tileLists : new Map(),
     typeNumbers : new Map(),
@@ -534,7 +592,7 @@ let gameMap={
 
 let bar={
     startX : gameMap.startX-systemValue.size/2,
-    startY : gameMap.startY+systemValue.size*6 +50,
+    startY : gameMap.startY+systemValue.size*6.5,
     itself : new PIXI.Graphics(),
     maxSize : 7,
     lengthNow : 0,
@@ -589,58 +647,6 @@ let bar={
     }
 }
 
-let farmInformation ={
-    startX : gameMap.startX,
-    startY : 0,
-    itself : new PIXI.Graphics(),
-    coinBoard : {
-        startX : 10,
-        startY : 10,
-        itself : new PIXI.Text(),
-        coin : 50,
-        create(){
-            this.itself.position.set(this.startX,this.startY);
-            farmInformation.itself.addChild(this.itself);
-            this.itself.text = `金币：${this.coin}`;
-        },
-        change(value){
-            console.log(value);
-            console.log(this.coin)
-            this.coin += value;
-            this.itself.text = `金币：${this.coin}`;
-        }
-    },
-    gameDate :{
-        startX :10,
-        startY : 50,
-        itself : new PIXI.Text(),
-        year : 1,
-        week : 1,
-        create(){
-            this.itself.position.set(this.startX,this.startY);
-            farmInformation.itself.addChild(this.itself);
-            this.itself.text = `第${this.year}年，第${this.week}周`;
-        },
-        pass(){
-            this.week++;
-            if(this.week>52){
-                this.week=1;
-                this.year++;
-            }
-            this.itself.text = `第${this.year}年，第${this.week}周`;
-        }
-    },
-    create() {
-        this.itself.beginFill(0x66CCFF);
-        this.itself.zIndex =5;
-        this.itself.position.set(this.startX,this.startY);
-        this.itself.drawRect(0,0,systemValue.size*6,systemValue.size*6);
-        gameStage.itself.addChild(this.itself);
-        this.coinBoard.create();
-        this.gameDate.create();
-    }
-}
-
 let shopArea={
     startX : gameMap.startX + systemValue.size*7,
     startY : 0,
@@ -649,7 +655,7 @@ let shopArea={
         this.itself.beginFill(0x66CCFF);
         this.itself.zIndex =5;
         this.itself.position.set(this.startX,this.startY);
-        this.itself.drawRect(0,0,systemValue.size*8,systemValue.size*18);
+        this.itself.drawRect(0,0,systemValue.size*6,systemValue.size*12);
         gameStage.itself.addChild(this.itself);
     }
 }
