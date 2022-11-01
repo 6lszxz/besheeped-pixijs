@@ -1,24 +1,14 @@
-# besheeped-pixijs
+# 羊羊迷阵 Besheeped 开发者日记
 
-## Project setup
-```
-npm install
-```
+## alpha 1.0.2
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+在交给群友测试了一下之后，经过一点点小修小补，alpha总算是处在没有bug的状态了。作为目前自己写过的最大的项目，这一点属实难能可贵。目前已经具有了基本的玩法，已经完成了当时策划的80%以上（可以看根目录下的`策划.md`。不过作为软件工程大作业的话，距离alpha阶段发布还有一段时间，可以在这段时间补充一些新内容以及让组里的组员也进来一起开发。
 
-### Compiles and minifies for production
-```
-npm run build
-```
+目前的一些计划：
++ 界面（包括开始界面、规则介绍等）
++ 动画设计（多半是借助`pixi-tween`）
++ 随机事件系统
++ 游戏结局
++ 增加更多的牧场要素
 
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+之前还构想了一下用这个系统来进行三消战斗的设计，不知道有没有时间实现，毕竟对我个人来说，作为一个前端练手项目，这个项目的JavaScript部分有点太大了（虽然借助了Vue但是并没有使用任何的vue特性），不过还是能锻炼自己的很多能力的，总之尽量写吧。虽然还没有把注释弄完，不然组员们也没法接手啊QAQ。

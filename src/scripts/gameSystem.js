@@ -18,7 +18,9 @@ const app = new PIXI.Application({
  * @function
  */
 function createApp(){
+    // 给HTML文档添加WebGL画布
     document.body.appendChild(app.view);
+    // 设定画面格式以及交互
     app.renderer.view.style.position='absolute'
     app.renderer.view.style.display ='block';
     app.renderer.autoResize = true;
@@ -32,11 +34,13 @@ function createApp(){
  * @function
  */
 function init(){
+    let version = new PIXI.Text('alpha 1.0.2');
     Tile.loadContents();
     gameStage.create();
     gameMap.shuffleAll();
     structureSystem.createToMap('sheep');
     shopButton.createAll();
+    app.stage.addChild(version);
 }
 /**
  * 每次点击中进行的操作，包括把元素移动到合成槽中、创建新的元素，检测需求是否完成或失败、生成随机需求、日期移动等
@@ -132,38 +136,43 @@ class Tile {
      * 把当前块传入到合成槽中
      */
     moveToBar(){
-        bar.lengthNow++;
-        gameMap.itself.removeChild(this.itself);
-        this.itself.interactive=false;
-        this.itself.position.set(bar.toBarPosition(bar.lengthNow),0);
-        bar.itself.addChild(this.itself);
-        let addPosition = bar.lengthNow;
-        for(let i=1;i<bar.lengthNow;i++){
-            if(bar.tileLists[i].id===this.id){
-                addPosition =i;
+        let isAddedBefore = false;
+        for(let i=1;i<=bar.lengthNow;i++){
+            if(bar.tileLists.get(i).id ===this.id){
+                isAddedBefore = true;
+                for(let j=bar.lengthNow+1;j>i+1;j--){
+                    bar.tileLists.set(j,bar.tileLists.get(j-1));
+                }
+                bar.tileLists.set(i+1,this);
+                break;
             }
         }
-        bar.tileLists.splice(addPosition,0,this);
+        if(!isAddedBefore){
+            bar.tileLists.set(bar.lengthNow+1,this);
+        }
+        bar.lengthNow++;
         bar.refresh();
+        gameMap.itself.removeChild(this.itself);
+        console.log(bar.tileLists);
         let lastNumber = bar.typeNumbers.get(this.id);
         lastNumber++;
         bar.typeNumbers.set(this.id,lastNumber);
         let tempNumber = gameMap.typeNumbers.get(this.id);
         tempNumber--;
         gameMap.typeNumbers.set(this.id,tempNumber);
+        bar.itself.addChild(this.itself);
     }
     /**
      * 把当前块从合成槽中移除
      */
     removeFromBar(){
-        let tempPosition=1;
         for(let i=1;i<=bar.lengthNow;i++){
-            if(bar.tileLists[i].id===this.id){
-                tempPosition = i;
-                break;
+            if(bar.tileLists.get(i)===this){
+                for(let j=i;j<=bar.lengthNow;j++){
+                    bar.tileLists.set(j,bar.tileLists.get(j+1));
+                }
             }
         }
-        bar.tileLists.splice(tempPosition,1);
         bar.itself.removeChild(this.itself);
         bar.lengthNow--;
         let id = this.id;
@@ -491,7 +500,7 @@ let farmInformation ={
         startX : 10,
         startY : 10,
         itself : new PIXI.Text(),
-        coin : 500,
+        coin : 50,
         create(){
             this.itself.position.set(this.startX,this.startY);
             farmInformation.itself.addChild(this.itself);
@@ -596,7 +605,7 @@ let bar={
     itself : new PIXI.Graphics(),
     maxSize : 7,
     lengthNow : 0,
-    tileLists : [''],
+    tileLists : new Map(),
     typeNumbers : new Map(),
     create(){
         for(let i=0;i<Tile.types.length;i++){
@@ -613,7 +622,7 @@ let bar={
     },
     refresh(){
         for(let i=1;i<= this.lengthNow;i++){
-            this.tileLists[i].itself.position.set(bar.toBarPosition(i),0);
+            this.tileLists.get(i).itself.position.set(bar.toBarPosition(i),0);
         }
     },
     checkMatch(){
@@ -621,8 +630,9 @@ let bar={
             let tempNumber = bar.typeNumbers.get(Tile.types[i]);
             if(tempNumber>=3){
                 while(tempNumber!==0){
-                    for(let tile of bar.tileLists){
+                    for(let tile of bar.tileLists.values()){
                         if(tile.id ===Tile.types[i]){
+                            console.log(tile);
                             tile.removeFromBar();
                             break;
                         }
@@ -640,7 +650,7 @@ let bar={
         if(bar.lengthNow===bar.maxSize){
             farmInformation.coinBoard.change(-100);
             for(let i=7;i>2;i--){
-                bar.tileLists[i].removeFromBar();
+                bar.tileLists.get(i).removeFromBar();
             }
             bar.refresh();
         }
