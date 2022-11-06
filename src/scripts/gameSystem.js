@@ -12,6 +12,9 @@ const app = new PIXI.Application({
     backgroundColor : 0x90EE90,
 });
 
+// 版本号
+let versionNumber='alpha 1.0.3';
+
 // 以下都是系统流程中调用的函数
 /**
  * 创建PIXI应用，包括设定背景，锁定大小，设定交互等
@@ -34,7 +37,7 @@ function createApp(){
  * @function
  */
 function init(){
-    let version = new PIXI.Text('alpha 1.0.2');
+    let version = new PIXI.Text(versionNumber);
     Tile.loadContents();
     gameStage.create();
     gameMap.shuffleAll();
@@ -376,19 +379,22 @@ class shopButton{
     static createAll(){
         for(let i=0;i<shopButton.buttonsNumber;i++){
             let buttonNow = shopButtonList[i];
-            buttonNow.isBought = false;
-            buttonNow.canBeBought = false;
-            buttonNow.itself = new PIXI.Graphics();
-            buttonNow.itself.beginFill(0x584783);
-            buttonNow.itself.zIndex =10;
-            buttonNow.itself.position.set(0,systemValue.toMapY(i===0?i+1:i*2+1));
-            buttonNow.itself.drawRoundedRect(0,0,systemValue.size*6,systemValue.size*1.5);
-            shopArea.itself.addChild(buttonNow.itself);
-            buttonNow.titleText = new PIXI.Text(`${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`);
-            buttonNow.titleText.position.set(10,0);
-            buttonNow.titleText.zIndex =15;
-            buttonNow.itself.addChild(buttonNow.titleText);
+            shopButton.create(buttonNow,i);
         }
+    }
+    static create(buttonNow,i){
+        buttonNow.isBought = false;
+        buttonNow.canBeBought = false;
+        buttonNow.itself = new PIXI.Graphics();
+        buttonNow.itself.beginFill(0x584783);
+        buttonNow.itself.zIndex =10;
+        buttonNow.itself.position.set(0,systemValue.toMapY(i===0?i+1:i*2+1));
+        buttonNow.itself.drawRoundedRect(0,0,systemValue.size*6,systemValue.size*1.5);
+        shopArea.itself.addChild(buttonNow.itself);
+        buttonNow.titleText = new PIXI.Text(`${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`);
+        buttonNow.titleText.position.set(10,0);
+        buttonNow.titleText.zIndex =15;
+        buttonNow.itself.addChild(buttonNow.titleText);
     }
     /**
      * 检测是否达到了购买的条件
@@ -396,25 +402,35 @@ class shopButton{
     static checkCanBeBoughtAll(){
         for(let i=0;i<shopButton.buttonsNumber;i++){
             let buttonNow = shopButtonList[i];
-            if(farmInformation.coinBoard.coin>=buttonNow.cost && (!buttonNow.isBought)){
-                buttonNow.titleText.text= `${buttonNow.name}\n 花费：${buttonNow.cost}，点击购买`
-                buttonNow.canBeBought = true;
-                buttonNow.itself.interactive = true;
-                buttonNow.itself.on('pointertap',()=>{
-                    if(farmInformation.coinBoard.coin>=buttonNow.cost && (!buttonNow.isBought)){
-                        console.log('isTouched');
-                        if(buttonNow.type === 'structure'){
-                            structureSystem.createToMap(buttonNow.name);
-                        }
-                        farmInformation.coinBoard.change(-(buttonNow.cost));
-                        buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
-                        buttonNow.isBought = true;
+            shopButton.checkCanBeBought(buttonNow);
+        }
+    }
+    static checkCanBeBought(buttonNow){
+        console.log(buttonNow);
+        if(buttonNow.isBought){
+            buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
+            return;
+        }
+        if(farmInformation.coinBoard.coin<buttonNow.cost && buttonNow.isBought){
+            buttonNow.titleText.text= `${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`
+            buttonNow.canBeBought = false;
+            return;
+        }
+        if(farmInformation.coinBoard.coin>=buttonNow.cost && (!buttonNow.isBought)){
+            buttonNow.titleText.text= `${buttonNow.name}\n 花费：${buttonNow.cost}，点击购买`
+            buttonNow.canBeBought = true;
+            buttonNow.itself.interactive = true;
+            buttonNow.itself.on('pointertap',()=>{
+                if(farmInformation.coinBoard.coin>=buttonNow.cost && (!buttonNow.isBought)){
+                    console.log('isTouched');
+                    if(buttonNow.type === 'structure'){
+                        structureSystem.createToMap(buttonNow.name);
                     }
-                });         
-            }else{
-                buttonNow.titleText.text= `${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`
-                buttonNow.canBeBought = false;
-            }
+                    farmInformation.coinBoard.change(-(buttonNow.cost));
+                    buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
+                    buttonNow.isBought = true;
+                }
+            });    
         }
     }
 }
@@ -427,9 +443,9 @@ class shopButton{
  * @property number scaleX X轴缩放
  * @property number scaleY Y轴缩放
  * @property string pointerNow 最近消除的元素名称
- * @property setPointerNow 更改最近消除的元素名称
- * @property toMapX 把传入的x坐标变成显示器上的全局坐标
- * @property toMapY 把传入的y坐标变成显示器上的全局坐标
+ * @property setPointerNow function 更改最近消除的元素名称
+ * @property toMapX function 把传入的x坐标变成显示器上的全局坐标
+ * @property toMapY function 把传入的y坐标变成显示器上的全局坐标
  */
 let systemValue={
     size :48,
@@ -452,7 +468,7 @@ let systemValue={
  * @property itself PIXI.Container 创建的PIXI容器
  * @property positionX number 左上角顶点横坐标
  * @property positionY number 左上角顶点纵坐标
- * @property create 把游戏舞台创建到app上
+ * @property create function 把游戏舞台创建到app上
  */
 let gameStage = {
     itself : new PIXI.Container(),
@@ -474,7 +490,7 @@ let gameStage = {
  * @property itself PIXI.Graphics 牧场背景
  * @property positionX number 左上角顶点横坐标
  * @property positionY number 左上角顶点纵坐标
- * @property create 把牧场区域创建到游戏舞台上
+ * @property create function 把牧场区域创建到游戏舞台上
  */
 let farmArea ={
     itself : new PIXI.Graphics(),
@@ -489,13 +505,29 @@ let farmArea ={
         gameStage.itself.addChild(this.itself);
     },
 }
-
+/**
+ * 牧场信息，就是放金币和游戏时间（现在是第几年第几周的地方）
+ * @type {{itself: PIXI.Graphics, gameDate: {itself: PIXI.Text, week: number, year: number, pass(): void, create(): void, startY: number, startX: number}, coinBoard: {itself: PIXI.Text, change(*): void, create(): void, startY: number, startX: number, coin: number}, endPositionY: number, endPositionX: number, create(): void, startY: number, startX: number}}
+ * @property startX number 牧场信息框的左上角横坐标
+ * @property startY number 牧场信息框的左上角纵坐标
+ * @property itself PIXI.Graphics 信息框奔赴，是一个画的几何图形
+ * @property coinBoard Object 金币信息
+ * @property gameDate Object 游戏日期，一个回合为一周
+ */
 let farmInformation ={
     startX : farmArea.endPositionX+systemValue.size*1,
     startY : 0,
     itself : new PIXI.Graphics(),
     endPositionX :farmArea.endPositionX+systemValue.size*7,
-    endPositionY : systemValue.size*3, 
+    endPositionY : systemValue.size*3,
+    /**
+     * 金币信息
+     * @property startX number 左上角横坐标
+     * @property startY number 左上角纵坐标
+     * @property itself PIXI.Text 金币的文本
+     * @property create function 创建到画面上
+     * @property change function 改变所持的金币值，正数为增负数为减
+     */
     coinBoard : {
         startX : 10,
         startY : 10,
@@ -598,7 +630,22 @@ let gameMap={
         return gameMap.typeNumbers.get(id)>=3;
     }
 }
-
+/**
+ * 合成槽
+ * @type {{itself: PIXI.Graphics, toBarPosition(*): *, lengthNow: number, typeNumbers: Map<any, any>, create(): void, refresh(): void, checkMatch(): void, startY: number, maxSize: number, startX: number, checkFull(): void, tileLists: Map<any, any>}}
+ * @property startX number 左上角横坐标
+ * @property startY number 左上角纵坐标
+ * @property itself PIXI.Graphics 合成槽本身
+ * @property maxSize number 合成槽的最大大小
+ * @property lengthNow number 合成槽目前的容量大小
+ * @property tileLists Map 合成槽中的块种类
+ * @property typeNumbers Map 各种块的数量
+ * @property create function 在地图上创建合成槽
+ * @property toBarPosition function 把合成槽中的位置转换成显示器上的坐标
+ * @property refresh function 刷新合成槽
+ * @property checkMatch function 判断是否满足了消除条件
+ * @property checkFull function 判断合成槽是否已经满了
+ */
 let bar={
     startX : gameMap.startX-systemValue.size/2,
     startY : gameMap.startY+systemValue.size*6.5,
@@ -656,7 +703,14 @@ let bar={
         }
     }
 }
-
+/**
+ * 商店位置
+ * @type {{itself: PIXI.Graphics, create(): void, startY: number, startX: number}}
+ * @property startX number 左上角x坐标
+ * @property startY number 左上角y坐标
+ * @property itself PIXI.Graphics 本身，几何图形
+ * @property create function 把商店背景显示出来
+ */
 let shopArea={
     startX : gameMap.startX + systemValue.size*7,
     startY : 0,
@@ -669,5 +723,4 @@ let shopArea={
         gameStage.itself.addChild(this.itself);
     }
 }
-
-export {createApp,app}
+export {createApp};
