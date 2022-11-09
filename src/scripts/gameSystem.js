@@ -37,6 +37,10 @@ function createApp(){
  * @function
  */
 function init(){
+    if(window.innerWidth<window.innerHeight){
+        alert('请不要使用竖屏进行游戏！');
+        window.top.close();
+    }
     let version = new PIXI.Text(versionNumber);
     Tile.loadContents();
     gameStage.create();
