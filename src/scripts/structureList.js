@@ -53,7 +53,7 @@ let structureList=[
         willAddContent : true,
         contentAdded : 'cloth',
         canBeBoughtFromShop : true,
-    }
+    },
     {
         id : "smileEggPress" ,
         requiring : "smile",
