@@ -54,6 +54,17 @@ let structureList=[
         contentAdded : 'cloth',
         canBeBoughtFromShop : true,
     }
+    {
+        id : "smileEggPress" ,
+        requiring : "smile",
+        earning : 80,
+        startX ：3,
+        startY : 5,
+        willAddContent : true,
+        contentAddes : 'smile',
+        canBeBoughtFromShop : true,
+    }
+    
 
 ];
 export{structureList}
