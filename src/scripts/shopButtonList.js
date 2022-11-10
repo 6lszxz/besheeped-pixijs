@@ -18,7 +18,12 @@ let shopButtonList=[
         type : 'structure',
         name : 'loom',
         cost : 300,
-    }
+    },
+    {
+        type : 'structure' ,
+        name : 'smileEggPress',
+        cost : 500,
+    },
 ];
 
 export { shopButtonList };
