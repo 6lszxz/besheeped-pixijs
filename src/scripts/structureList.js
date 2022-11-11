@@ -83,7 +83,16 @@ let structureList=[
         contentAddes : 'smile',
         canBeBoughtFromShop : true,
     }
-    
+    {
+        id : "oilMaker",
+        requiring : "truffle",
+        earning : 100,
+        startX : 4,
+        startY : 5,
+        willAddContent : true,
+        contentAddes : 'oil',
+        canBeBoughtFromShop : true,
+    },
 
 ];
 export{structureList}
