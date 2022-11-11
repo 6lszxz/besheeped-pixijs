@@ -44,6 +44,16 @@ let structureList=[
         canBeBoughtFromShop : true,
     },
     {
+        id : "pig",
+        requiring : "apple",
+        earing : 80,
+        startX : 9,
+        startY : 1,
+        willAddContent : ture,
+        contentAdded : 'truffle',
+        canBeBoughtFromShop : true,
+    },
+    {
         id : "mayonnaiseMachine",
         requiring : "largeEgg",
         earning: 55,
