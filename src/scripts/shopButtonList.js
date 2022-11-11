@@ -29,6 +29,11 @@ let shopButtonList=[
         name : 'rabbit',
         cost : 800,
     },
+    {
+        type : 'structure',
+        name : 'pig',
+        cost : 1000,
+    },
 ];
 
 export { shopButtonList };
