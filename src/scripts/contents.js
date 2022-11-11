@@ -17,7 +17,8 @@ import milk from '../assets/contents/milk.png'
 import largeEgg from '../assets/contents/largeEgg.png'
 import mayonnaise from '../assets/contents/mayonnaise.png'
 import cloth from '../assets/contents/cloth.png'
-
+import oil from '../assets/contents/oil.png'
+import truffle from '../assets/contents/truffle.png'
 export {
     corn, wheat, fiber, radish, strawberry,
     torch, wool, wood, sardine, shears,
