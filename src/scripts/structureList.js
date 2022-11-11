@@ -84,7 +84,7 @@ let structureList=[
         canBeBoughtFromShop : true,
     }
     {
-        id : "oilMaker",
+        id : "oilmaker",
         requiring : "truffle",
         earning : 100,
         startX : 4,
