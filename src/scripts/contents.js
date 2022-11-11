@@ -23,5 +23,5 @@ export {
     corn, wheat, fiber, radish, strawberry,
     torch, wool, wood, sardine, shears,
     wateringCan, apple, clam, redMushroom, smile,
-    milk, largeEgg, mayonnaise, cloth, 
+    milk, largeEgg, mayonnaise, cloth, oil,truffle,
 }
