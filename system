@@ -3,8 +3,10 @@ import * as contents from './contents';
 import * as structures from './structures'
 import { structureList } from './structureList';
 import { shopButtonList } from './shopButtonList';
+import { soundTapTile } from './sounds';
 import * as sounds from './sounds';
 import { sound } from '@pixi/sound';
+
 /**
  * 整个PIXI应用，所有的元素都应是这个应用的子元素
  * @type {PIXI.Application}
@@ -32,7 +34,6 @@ function createApp(){
     app.stage.interactive = true;
     init();
     app.stage.scale.set(systemValue.scaleX,systemValue.scaleY);
-    window.onload;
 }
 /**
  * 对应用内容进行初始化，包括加载资源、创建游戏舞台、刷新一个棋盘、把默认的羊放到牧场中，创建商店
@@ -50,7 +51,6 @@ function init(){
     structureSystem.createToMap('sheep');
     shopButton.createAll();
     app.stage.addChild(version);
-    clickMusic();
 }
 /**
  * 每次点击中进行的操作，包括把元素移动到合成槽中、创建新的元素，检测需求是否完成或失败、生成随机需求、日期移动等
@@ -731,6 +731,7 @@ let shopArea={
     }
 }
 export {createApp};
+
 window.onload=function(){
     let bgm_text=document.querySelector('.bgm_text');
     let bgm_btn_play=document.querySelector('.bgm_text');
@@ -744,11 +745,9 @@ window.onload=function(){
         bgm.pause();
     }
     bgm.setAttribute('value',1);
-    bgm.innerHTML='<source src="src/assets/BGM1.mp3" type="audio/mpeg">';
+    bgm.innerHTML='<source src="bgm1.mp3" type="audio/mpeg">';
     bgm_text.innerHTML='正在播放';
-	
-	
-	//可不要
+
     let bgm_btn_rest=document.querySelector('.bgm_btn_rest');
     bgm_btn_rest.onclick=function(){
         bgm.pause();
@@ -784,6 +783,3 @@ function clickMusic(){
  
  
  */
-
-
-
