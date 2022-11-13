@@ -3,7 +3,8 @@ import * as contents from './contents';
 import * as structures from './structures'
 import { structureList } from './structureList';
 import { shopButtonList } from './shopButtonList';
-
+import * as sounds from './sounds';
+import { sound } from '@pixi/sound';
 /**
  * 整个PIXI应用，所有的元素都应是这个应用的子元素
  * @type {PIXI.Application}
@@ -31,6 +32,7 @@ function createApp(){
     app.stage.interactive = true;
     init();
     app.stage.scale.set(systemValue.scaleX,systemValue.scaleY);
+    window.onload;
 }
 /**
  * 对应用内容进行初始化，包括加载资源、创建游戏舞台、刷新一个棋盘、把默认的羊放到牧场中，创建商店
@@ -48,6 +50,7 @@ function init(){
     structureSystem.createToMap('sheep');
     shopButton.createAll();
     app.stage.addChild(version);
+    clickMusic();
 }
 /**
  * 每次点击中进行的操作，包括把元素移动到合成槽中、创建新的元素，检测需求是否完成或失败、生成随机需求、日期移动等
@@ -728,3 +731,59 @@ let shopArea={
     }
 }
 export {createApp};
+window.onload=function(){
+    let bgm_text=document.querySelector('.bgm_text');
+    let bgm_btn_play=document.querySelector('.bgm_text');
+    let bgm_btn_stop=document.querySelector('.bgm_text');
+    let bgm = document.getElementById('bgm');
+
+    bgm_btn_play.onclick=function(){
+        bgm.play();
+    }
+    bgm_btn_stop.onclick=function(){
+        bgm.pause();
+    }
+    bgm.setAttribute('value',1);
+    bgm.innerHTML='<source src="src/assets/BGM1.mp3" type="audio/mpeg">';
+    bgm_text.innerHTML='正在播放';
+	
+	
+	//可不要
+    let bgm_btn_rest=document.querySelector('.bgm_btn_rest');
+    bgm_btn_rest.onclick=function(){
+        bgm.pause();
+        setTimeout(function(){
+            localStorage.removeItem('bgm_gds');
+            localStorage.removeItem('bgm_time');
+            bgm.setAttribute('value',1);
+            bgm.innerHTML='<source src="bgm1.mp3" type="audio/mpeg">';
+            bgm_text.innerHTML='当前播放第一首歌曲';
+            bgm.load();
+            bgm.play();
+        },200);
+    }
+}
+function clickMusic(){
+	lPIXI.sound,add('my-sound',soundTapTile);
+	PIXI.sound.play('my-sound');
+}
+/**
+ *html文件中：
+ <body>
+   <div class="music">
+     <div class="bgm_text"></div>
+     <div class="bgm_btn">
+       <span class="bgm_btn_play">播放</span>
+       <span class="bgm_btn_stop">暂停</span>
+       <span class="bgm_btn_rest">重置</span>
+     </div>
+     <audio value="1" id="bgm" controls loop></audio>
+   </div>>
+   <script src="index.js"></script>
+ </body>
+ 
+ 
+ */
+
+
+
