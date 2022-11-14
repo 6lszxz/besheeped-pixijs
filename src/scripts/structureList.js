@@ -35,6 +35,25 @@ let structureList=[
         canBeBoughtFromShop : true,
     },
     {
+        id : "rabbit",
+        requiring : "radish",
+        earing : 60,
+        startX : 6,
+        startY : 2,
+        willAddContent : false,
+        canBeBoughtFromShop : true,
+    },
+    {
+        id : "pig",
+        requiring : "apple",
+        earing : 80,
+        startX : 7,
+        startY : 2,
+        willAddContent : true,
+        contentAdded : 'truffle',
+        canBeBoughtFromShop : true,
+    },
+    {
         id : "mayonnaiseMachine",
         requiring : "largeEgg",
         earning: 55,
@@ -53,7 +72,26 @@ let structureList=[
         willAddContent : true,
         contentAdded : 'cloth',
         canBeBoughtFromShop : true,
-    }
-
+    },
+    {
+        id : "smileEggPress" ,
+        requiring : "smile",
+        earning : 80,
+        startX : 3,
+        startY : 5,
+        willAddContent : true,
+        contentAdded : 'smile',
+        canBeBoughtFromShop : true,
+    },
+    {
+        id : "oilMaker",
+        requiring : "truffle",
+        earning : 100,
+        startX : 4,
+        startY : 5,
+        willAddContent : true,
+        contentAdded : 'oil',
+        canBeBoughtFromShop : true,
+    },
 ];
 export{structureList}
