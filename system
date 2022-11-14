@@ -3,8 +3,10 @@ import * as contents from './contents';
 import * as structures from './structures'
 import { structureList } from './structureList';
 import { shopButtonList } from './shopButtonList';
+import { soundTapTile } from './sounds';
 import * as sounds from './sounds';
 import { sound } from '@pixi/sound';
+
 /**
  * 整个PIXI应用，所有的元素都应是这个应用的子元素
  * @type {PIXI.Application}
@@ -32,7 +34,6 @@ function createApp(){
     app.stage.interactive = true;
     init();
     app.stage.scale.set(systemValue.scaleX,systemValue.scaleY);
-    window.onload;
 }
 /**
  * 对应用内容进行初始化，包括加载资源、创建游戏舞台、刷新一个棋盘、把默认的羊放到牧场中，创建商店
@@ -50,7 +51,6 @@ function init(){
     structureSystem.createToMap('sheep');
     shopButton.createAll();
     app.stage.addChild(version);
-    clickMusic();
 }
 /**
  * 每次点击中进行的操作，包括把元素移动到合成槽中、创建新的元素，检测需求是否完成或失败、生成随机需求、日期移动等
@@ -59,19 +59,15 @@ function init(){
  * @param tile {Tile}
  */
 function tapLoop(tile){
-    // tile.moveToBar();
-    getMove(tile,function (){
-        tile.moveToBar();
-        bar.checkMatch();
-        gameMap.fallAndCreate(tile.x,tile.y);
-        itemRequire.checkSuccesses();
-        itemRequire.lastingTimeChanges(1);
-        itemRequire.checkFails();
-        shopButton.checkCanBeBoughtAll();
-        farmInformation.gameDate.pass();
-        itemRequire.spawnRandomRequire();
-    })
-
+    tile.moveToBar();
+    gameMap.fallAndCreate(tile.x,tile.y);
+    bar.checkMatch();
+    itemRequire.checkSuccesses();
+    itemRequire.lastingTimeChanges(1);
+    itemRequire.checkFails();
+    shopButton.checkCanBeBoughtAll();
+    farmInformation.gameDate.pass();
+    itemRequire.spawnRandomRequire();
 }
 
 // 以下都是需要的类
@@ -118,7 +114,7 @@ class Tile {
         if(id==='random'){
             do{
                 this.id = Tile.types[Math.floor(Math.random()*(Tile.types.length))];
-            }while(gameMap.checkId(this.id) || !Tile.typesNow.has(this.id));
+            }while(gameMap.checkId(this.id) || !Tile.typesNow.has(this.id));          
         }else {
             this.id = id;
         }
@@ -133,8 +129,8 @@ class Tile {
     createToMap(X,Y){
         this.x=X;
         this.y=Y;
-        this.itself = new PIXI.Sprite.from(contents[`${this.id}`]);//创建一个新的
-        this.itself.position.set(systemValue.toMapX(this.x),systemValue.toMapY(this.y));//位置
+        this.itself = new PIXI.Sprite.from(contents[`${this.id}`]);
+        this.itself.position.set(systemValue.toMapX(this.x),systemValue.toMapY(this.y));
         this.itself.interactive = true;
         this.itself.zIndex=10;
         gameMap.tileLists.set(`${this.x},${this.y}`,this);
@@ -144,17 +140,15 @@ class Tile {
         let lastNumber = gameMap.typeNumbers.get(this.id);
         lastNumber++;
         gameMap.typeNumbers.set(this.id,lastNumber);
-         gameMap.itself.addChild(this.itself);//创建
-
+        gameMap.itself.addChild(this.itself);
     }
-
     /**
      * 把当前块传入到合成槽中
      */
     moveToBar(){
         let isAddedBefore = false;
         for(let i=1;i<=bar.lengthNow;i++){
-            if(bar.tileLists.get(i).id ===this.id ){
+            if(bar.tileLists.get(i).id ===this.id){
                 isAddedBefore = true;
                 for(let j=bar.lengthNow+1;j>i+1;j--){
                     bar.tileLists.set(j,bar.tileLists.get(j-1));
@@ -168,6 +162,7 @@ class Tile {
         }
         bar.lengthNow++;
         bar.refresh();
+        gameMap.itself.removeChild(this.itself);
         console.log(bar.tileLists);
         let lastNumber = bar.typeNumbers.get(this.id);
         lastNumber++;
@@ -175,13 +170,8 @@ class Tile {
         let tempNumber = gameMap.typeNumbers.get(this.id);
         tempNumber--;
         gameMap.typeNumbers.set(this.id,tempNumber);
-        bar.itself.addChild(this.itself);//创建对象到合成槽中
-
-
+        bar.itself.addChild(this.itself);
     }
-
-
-
     /**
      * 把当前块从合成槽中移除
      */
@@ -275,13 +265,13 @@ class itemRequire{
      */
     static spawnRandomRequire(){
         console.log(`${itemRequire.requiringNow.size} ${structureSystem.structureNow.size/2}`)
-        if(Math.floor(Math.random()*4)===1 && itemRequire.requiringNow.size< structureSystem.structureNow.size/2){
+        if(Math.floor(Math.random()*4)===1 && itemRequire.requiringNow.size< structureSystem.structureNow.size/2){ 
             let tempNumber = Math.floor(Math.random()*structureSystem.structureNow.size);
             let i=0;
             for(let structure of structureSystem.structureNow){
                 if(i===tempNumber && !structure.onRequiringNow){
-                    structureSystem.spawnItemRequire(structure.id);
-                    break;
+                        structureSystem.spawnItemRequire(structure.id);
+                        break;
                 }
                 i++;
             }
@@ -357,7 +347,7 @@ class itemRequire{
             farmArea.itself.removeChild(this.itself);
             itemRequire.requiringNow.delete(this);
         }
-
+        
     }
     /**
      * 减少单个需求的倒计时
@@ -447,7 +437,7 @@ class shopButton{
                     buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
                     buttonNow.isBought = true;
                 }
-            });
+            });    
         }
     }
 }
@@ -679,10 +669,9 @@ let bar={
         this.itself.zIndex = 5;
         this.itself.position.set(this.startX,this.startY);
         this.itself.drawRect(0,0,systemValue.size*7,systemValue.size);
-        console.log(this);
         gameStage.itself.addChild(this.itself);
     },
-    toBarPosition(value){//输入数字
+    toBarPosition(value){
         return systemValue.size*(value-1);
     },
     refresh(){
@@ -741,56 +730,7 @@ let shopArea={
         gameStage.itself.addChild(this.itself);
     }
 }
-/**
- * 实现动画效果
- */
-
-function getMove(a,callback){//传入参数为具体的方格，在合成槽放的第几个位置
-    let isAddedBefore = false;
-    let endatat=0;//记录在合成槽的第几个放元素
-    for(let i=1;i<=bar.lengthNow;i++){
-        if(bar.tileLists.get(i).id ===a.id ){
-            isAddedBefore = true;
-            endatat=i+1;
-            break;
-        }
-    }
-    if(!isAddedBefore){
-        endatat=bar.lengthNow+1;
-    }
-    let endx=(endatat-1)*48-24;//合成槽在方格的对应坐标
-    let endy=312;//同上,312
-    let ax=systemValue.toMapX(a.x);
-    let ay=systemValue.toMapY(a.y);
-    let time=setInterval(function (){
-        if(ax==endx&&ay==endy){
-            gameMap.itself.removeChild(a.itself);
-            clearInterval(time);
-            callback();
-
-        }else {
-            var walkx = (endx -ax ) / 4;
-            if (walkx > 0) {
-                walkx = Math.ceil(walkx);
-            } else {
-                walkx = Math.floor(walkx);
-            }
-            var walky = (endy - ay) / 4;
-            if (walky> 0) {
-                walky = Math.ceil(walky);
-            } else {
-                walky= Math.floor(walky);
-            }
-            a.itself.position.set(ax+walkx,ay+walky);
-            gameMap.itself.addChild(a.itself);
-            ax+=walkx;
-            ay+=walky;
-        }
-
-    },20)
-
-}
-
+export {createApp};
 
 window.onload=function(){
     let bgm_text=document.querySelector('.bgm_text');
@@ -805,11 +745,9 @@ window.onload=function(){
         bgm.pause();
     }
     bgm.setAttribute('value',1);
-    bgm.innerHTML='<source src="src/assets/BGM1.mp3" type="audio/mpeg">';
+    bgm.innerHTML='<source src="bgm1.mp3" type="audio/mpeg">';
     bgm_text.innerHTML='正在播放';
-	
-	
-	//可不要
+
     let bgm_btn_rest=document.querySelector('.bgm_btn_rest');
     bgm_btn_rest.onclick=function(){
         bgm.pause();
@@ -845,6 +783,3 @@ function clickMusic(){
  
  
  */
-export {createApp};
-
-
