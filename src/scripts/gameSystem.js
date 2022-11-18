@@ -794,10 +794,12 @@ let soundSystem={
         PIXISound.sound.add('BGM3',sounds.BGM3);
         PIXISound.sound.add('BGM4',sounds.BGM4);
         PIXISound.sound.add('BGM5',sounds.BGM5);
+        PIXISound.sound.add('BGM6',sounds.BGM6);
+        PIXISound.sound.add('BGM7',sounds.BGM7);
     },
     BGM(){
-        let BGMrandom=['BGM1','BGM2','BGM3','BGM4','BGM5'];
-        let i=getRandomInt(0,4);
+        let BGMrandom=['BGM1','BGM2','BGM3','BGM4','BGM5','BGM6','BGM7'];
+        let i=getRandomInt(0,6);
         PIXISound.sound.play(BGMrandom[i],soundSystem.BGM);
 
     },
@@ -811,7 +813,7 @@ let soundSystem={
 function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
-    var rand1 = Math.floor(Math.random() * (max - min + 1)) + min;//注意加一
+    let rand1 = Math.floor(Math.random() * (max - min + 1)) + min;//注意加一
     return rand1;
 }
 export {createApp};
