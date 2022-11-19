@@ -1,0 +1,63 @@
+/**
+ * 实现点击开始游戏后展示游戏规则图片，后续可根据需求value的值改变
+ * 以下是css样式：
+ *         #box{
+ *             width: 100%;
+ *             height: 100%;
+ *             background: rgba(0,0,0,.3);
+ *         }
+ *         规则图片的样式：
+ *         #content{
+ *             position: absolute;
+ *             top: 50%;
+ *             width: 900px;
+ *             height: 500px;
+ *             line-height: 200px;
+ *             text-align: center;
+ *             color: red;
+ *             background-color: #fff;
+ * 			left:50%;
+ *             margin-left:-450px;
+ * 			   margin-top: -250px;
+ *         }
+ *         叉号的样式
+ *         #span1{
+ *             position: absolute;
+ *             background-color: red;
+ *             top: 0;
+ *             right: 0;
+ *             width: 30px;
+ *             height: 30px;
+ *             line-height: 30px;
+ *             text-align: center;
+ *             color: #fff;
+ *             cursor: pointer;
+ *         }
+ *  oImg.src的值可根据需求更改
+ * 使用时将此函数赋值给widow.onload即可
+ */
+function showGameRule(){
+    document.body.innerHTML = '<input id = "btn" type = "button" value = "开始游戏"/>';
+    let oBtn = document.getElementById('btn');
+    let oDiv = document.createElement('div');
+    let oImg = document.createElement('img');
+    let oSpan = document.createElement('span');
+
+    oDiv.id = 'box';
+    oImg.id = 'content'
+    oImg.src = 'rule.jpg';
+
+    oSpan.innerHTML = 'X';
+    oSpan.id = 'span1'
+
+    oDiv.appendChild(oImg);
+    oDiv.appendChild(oSpan);
+
+    oBtn.onclick = function(){
+        this.parentNode.insertBefore(oDiv,btn)
+    }
+    oSpan.onclick = function(){
+        oDiv.parentNode.removeChild(oDiv)
+    }
+
+}
