@@ -4,7 +4,7 @@ import * as structures from './structures'
 import { structureList } from './structureList';
 import { shopButtonList } from './shopButtonList';
 import * as sounds from './sounds';
-import { sound } from '@pixi/sound';
+import * as PIXISound from '@pixi/sound';
 /**
  * 整个PIXI应用，所有的元素都应是这个应用的子元素
  * @type {PIXI.Application}
@@ -14,7 +14,7 @@ const app = new PIXI.Application({
 });
 
 // 版本号
-let versionNumber='alpha 1.0.3';
+let versionNumber='alpha 1.1.0';
 
 // 以下都是系统流程中调用的函数
 /**
@@ -32,13 +32,13 @@ function createApp(){
     app.stage.interactive = true;
     init();
     app.stage.scale.set(systemValue.scaleX,systemValue.scaleY);
-    window.onload;
 }
 /**
  * 对应用内容进行初始化，包括加载资源、创建游戏舞台、刷新一个棋盘、把默认的羊放到牧场中，创建商店
  * @function
  */
 function init(){
+    soundSystem.init();
     if(window.innerWidth<window.innerHeight){
         alert('请不要使用竖屏进行游戏！');
         window.top.close();
@@ -50,7 +50,7 @@ function init(){
     structureSystem.createToMap('sheep');
     shopButton.createAll();
     app.stage.addChild(version);
-    clickMusic();
+    soundSystem.BGM();
 }
 /**
  * 每次点击中进行的操作，包括把元素移动到合成槽中、创建新的元素，检测需求是否完成或失败、生成随机需求、日期移动等
@@ -59,15 +59,18 @@ function init(){
  * @param tile {Tile}
  */
 function tapLoop(tile){
-    tile.moveToBar();
-    gameMap.fallAndCreate(tile.x,tile.y);
-    bar.checkMatch();
-    itemRequire.checkSuccesses();
-    itemRequire.lastingTimeChanges(1);
-    itemRequire.checkFails();
-    shopButton.checkCanBeBoughtAll();
-    farmInformation.gameDate.pass();
-    itemRequire.spawnRandomRequire();
+    getMove(tile,function (){
+        tile.moveToBar();
+        bar.checkMatch();
+        gameMap.fallAndCreate(tile.x,tile.y);
+        itemRequire.checkSuccesses();
+        itemRequire.lastingTimeChanges(1);
+        itemRequire.checkFails();
+        shopButton.checkCanBeBoughtAll();
+        farmInformation.gameDate.pass();
+        itemRequire.spawnRandomRequire();
+    })
+
 }
 
 // 以下都是需要的类
@@ -114,7 +117,7 @@ class Tile {
         if(id==='random'){
             do{
                 this.id = Tile.types[Math.floor(Math.random()*(Tile.types.length))];
-            }while(gameMap.checkId(this.id) || !Tile.typesNow.has(this.id));          
+            }while(gameMap.checkId(this.id) || !Tile.typesNow.has(this.id));
         }else {
             this.id = id;
         }
@@ -129,8 +132,8 @@ class Tile {
     createToMap(X,Y){
         this.x=X;
         this.y=Y;
-        this.itself = new PIXI.Sprite.from(contents[`${this.id}`]);
-        this.itself.position.set(systemValue.toMapX(this.x),systemValue.toMapY(this.y));
+        this.itself = new PIXI.Sprite.from(contents[`${this.id}`]);//创建一个新的
+        this.itself.position.set(systemValue.toMapX(this.x),systemValue.toMapY(this.y));//位置
         this.itself.interactive = true;
         this.itself.zIndex=10;
         gameMap.tileLists.set(`${this.x},${this.y}`,this);
@@ -140,7 +143,7 @@ class Tile {
         let lastNumber = gameMap.typeNumbers.get(this.id);
         lastNumber++;
         gameMap.typeNumbers.set(this.id,lastNumber);
-        gameMap.itself.addChild(this.itself);
+        gameMap.itself.addChild(this.itself);//创建
     }
     /**
      * 把当前块传入到合成槽中
@@ -148,7 +151,7 @@ class Tile {
     moveToBar(){
         let isAddedBefore = false;
         for(let i=1;i<=bar.lengthNow;i++){
-            if(bar.tileLists.get(i).id ===this.id){
+            if(bar.tileLists.get(i).id ===this.id ){
                 isAddedBefore = true;
                 for(let j=bar.lengthNow+1;j>i+1;j--){
                     bar.tileLists.set(j,bar.tileLists.get(j-1));
@@ -162,7 +165,6 @@ class Tile {
         }
         bar.lengthNow++;
         bar.refresh();
-        gameMap.itself.removeChild(this.itself);
         console.log(bar.tileLists);
         let lastNumber = bar.typeNumbers.get(this.id);
         lastNumber++;
@@ -170,8 +172,13 @@ class Tile {
         let tempNumber = gameMap.typeNumbers.get(this.id);
         tempNumber--;
         gameMap.typeNumbers.set(this.id,tempNumber);
-        bar.itself.addChild(this.itself);
+        bar.itself.addChild(this.itself);//创建对象到合成槽中
+
+
     }
+
+
+
     /**
      * 把当前块从合成槽中移除
      */
@@ -265,13 +272,13 @@ class itemRequire{
      */
     static spawnRandomRequire(){
         console.log(`${itemRequire.requiringNow.size} ${structureSystem.structureNow.size/2}`)
-        if(Math.floor(Math.random()*4)===1 && itemRequire.requiringNow.size< structureSystem.structureNow.size/2){ 
+        if(Math.floor(Math.random()*4)===1 && itemRequire.requiringNow.size< structureSystem.structureNow.size/2){
             let tempNumber = Math.floor(Math.random()*structureSystem.structureNow.size);
             let i=0;
             for(let structure of structureSystem.structureNow){
                 if(i===tempNumber && !structure.onRequiringNow){
-                        structureSystem.spawnItemRequire(structure.id);
-                        break;
+                    structureSystem.spawnItemRequire(structure.id);
+                    break;
                 }
                 i++;
             }
@@ -347,7 +354,7 @@ class itemRequire{
             farmArea.itself.removeChild(this.itself);
             itemRequire.requiringNow.delete(this);
         }
-        
+
     }
     /**
      * 减少单个需求的倒计时
@@ -437,7 +444,7 @@ class shopButton{
                     buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
                     buttonNow.isBought = true;
                 }
-            });    
+            });
         }
     }
 }
@@ -669,9 +676,10 @@ let bar={
         this.itself.zIndex = 5;
         this.itself.position.set(this.startX,this.startY);
         this.itself.drawRect(0,0,systemValue.size*7,systemValue.size);
+        console.log(this);
         gameStage.itself.addChild(this.itself);
     },
-    toBarPosition(value){
+    toBarPosition(value){//输入数字
         return systemValue.size*(value-1);
     },
     refresh(){
@@ -730,60 +738,123 @@ let shopArea={
         gameStage.itself.addChild(this.itself);
     }
 }
-export {createApp};
-window.onload=function(){
-    let bgm_text=document.querySelector('.bgm_text');
-    let bgm_btn_play=document.querySelector('.bgm_text');
-    let bgm_btn_stop=document.querySelector('.bgm_text');
-    let bgm = document.getElementById('bgm');
-
-    bgm_btn_play.onclick=function(){
-        bgm.play();
-    }
-    bgm_btn_stop.onclick=function(){
-        bgm.pause();
-    }
-    bgm.setAttribute('value',1);
-    bgm.innerHTML='<source src="src/assets/BGM1.mp3" type="audio/mpeg">';
-    bgm_text.innerHTML='正在播放';
-	
-	
-	//可不要
-    let bgm_btn_rest=document.querySelector('.bgm_btn_rest');
-    bgm_btn_rest.onclick=function(){
-        bgm.pause();
-        setTimeout(function(){
-            localStorage.removeItem('bgm_gds');
-            localStorage.removeItem('bgm_time');
-            bgm.setAttribute('value',1);
-            bgm.innerHTML='<source src="bgm1.mp3" type="audio/mpeg">';
-            bgm_text.innerHTML='当前播放第一首歌曲';
-            bgm.load();
-            bgm.play();
-        },200);
-    }
-}
-function clickMusic(){
-	lPIXI.sound,add('my-sound',soundTapTile);
-	PIXI.sound.play('my-sound');
-}
 /**
- *html文件中：
- <body>
-   <div class="music">
-     <div class="bgm_text"></div>
-     <div class="bgm_btn">
-       <span class="bgm_btn_play">播放</span>
-       <span class="bgm_btn_stop">暂停</span>
-       <span class="bgm_btn_rest">重置</span>
-     </div>
-     <audio value="1" id="bgm" controls loop></audio>
-   </div>>
-   <script src="index.js"></script>
- </body>
- 
- 
+ * 实现动画效果
  */
 
+function getMove(a,callback){//传入参数为具体的方格，在合成槽放的第几个位置
+    soundSystem.clickMusic();
+    let isAddedBefore = false;
+    let endatat=0;//记录在合成槽的第几个放元素
+    for(let i=1;i<=bar.lengthNow;i++){
+        if(bar.tileLists.get(i).id ===a.id ){
+            isAddedBefore = true;
+            endatat=i+1;
+            break;
+        }
+    }
+    if(!isAddedBefore){
+        endatat=bar.lengthNow+1;
+    }
+    let endx=(endatat-1)*48-24;//合成槽在方格的对应坐标
+    let endy=312;//同上,312
+    let ax=systemValue.toMapX(a.x);
+    let ay=systemValue.toMapY(a.y);
+    let time=setInterval(function (){
+        if(ax==endx&&ay==endy){
+            gameMap.itself.removeChild(a.itself);
+            clearInterval(time);
+            callback();
 
+        }else {
+            var walkx = (endx -ax ) / 4;
+            if (walkx > 0) {
+                walkx = Math.ceil(walkx);
+            } else {
+                walkx = Math.floor(walkx);
+            }
+            var walky = (endy - ay) / 4;
+            if (walky> 0) {
+                walky = Math.ceil(walky);
+            } else {
+                walky= Math.floor(walky);
+            }
+            a.itself.position.set(ax+walkx,ay+walky);
+            gameMap.itself.addChild(a.itself);
+            ax+=walkx;
+            ay+=walky;
+        }
+
+    },20)
+}
+let soundSystem={
+    init(){
+        PIXISound.sound.add('click',sounds.soundTapTile);
+        PIXISound.sound.add('BGM1',sounds.BGM1);
+    },
+    BGM(){
+        PIXISound.sound.play('BGM1',soundSystem.BGM);
+    },
+    clickMusic(){
+        PIXISound.sound.play('click');
+    }
+}
+
+/**
+ * 函数内部的onclick应该可以设为不同的相应方式，根据不同的需求可以设置不同的相应方式
+ */
+function showGameRule(){
+        document.body.innerHTML = '<input id = "btn" type = "button" value = "开始游戏"/>';
+	let oBtn = document.getElementById('btn');
+	let oDiv = document.createElement('div');
+	let oImg = document.createElement('img');
+	let oSpan = document.createElement('span');
+		
+	oDiv.id = 'box';
+	oImg.id = 'content'
+		
+	//要展示的图片是啥，具体可更改
+	oImg.src = 'rule.jpg';
+		
+		
+	oSpan.innerHTML = 'X';
+	oSpan.id = 'span1'
+		
+	oImg.style.position = 'absolute';
+	oImg.style.width = '900px';
+	oImg.style.height = '500px';
+	oImg.style.top = '50%';
+	oImg.style.lineHeight = '200px';
+	oImg.style.left = '50%';
+	oImg.style.marginLeft = '-450px';
+	oImg.style.marginTop = '-250px';
+		
+	oSpan.style.position = 'absolute';
+	oSpan.style.backgroundColor = 'red';
+	oSpan.style.top = '0';
+	oSpan.style.right = '0';
+	oSpan.style.width = '30px';
+	oSpan.style.height = '30px';
+	oSpan.style.lineHeight = '30px';
+	oSpan.style.textAlign = 'center';
+	oSpan.style.color = '#fff';
+	oSpan.style.cursor = 'pointer';
+		
+	oDiv.style.width = '100%';
+	oDiv.style.height = '100%';
+	oDiv.style.background = 'rgba(0,0,0,.3)';
+		
+	oDiv.appendChild(oImg);
+	oDiv.appendChild(oSpan);
+		
+	oBtn.onclick = function(){
+	    this.parentNode.insertBefore(oDiv,btn)
+	}
+	oSpan.onclick = function(){
+	    oDiv.parentNode.removeChild(oDiv)
+	}
+}
+
+
+export {createApp};
 
