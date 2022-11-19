@@ -49,6 +49,7 @@ function init(){
     gameMap.shuffleAll();
     structureSystem.createToMap('sheep');
     shopButton.createPage(1);
+    shopButton.createTurnPageButton();
     app.stage.addChild(version);
     soundSystem.BGM();
 }
@@ -432,17 +433,17 @@ class shopButton{
         //点击事件
         prePage.on("pointerdown", onButtonDown1);
         function onButtonDown1(){
-            for(let i = (nowPageNum-1)*5;i<(nowPageNum-1)*5+5;i++){
+            for(let i = (shopButton.nowPageNum-1)*5;i<(shopButton.nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
                 buttonNow.itself.removeChild(buttonNow.itself);
                 buttonNow.titleText.removeChild(buttonNow.titleText);
             }
-            if(nowPageNum == 1){
+            if(shopButton.nowPageNum == 1){
                 createPage(1);
             }
             else{
-                createPage(nowPageNum-1);
-                nowPageNum-=1;
+                createPage(shopButton.nowPageNum-1);
+                shopButton.nowPageNum-=1;
             }
         }  
         let nxtPage = new PIXI.Graphics();
@@ -465,17 +466,17 @@ class shopButton{
             else{
                 totalPages = buttonsNumber/5+1;
             }
-            for(let i = (nowPageNum-1)*5;i<(nowPageNum-1)*5+5;i++){
+            for(let i = (shopButton.nowPageNum-1)*5;i<(shopButton.nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
                 buttonNow.itself.removeChild(buttonNow.itself);
                 buttonNow.titleText.removeChild(buttonNow.titleText);
             }
-            if(nowPageNum == totalPages){
+            if(shopButton.nowPageNum == totalPages){
                 createPage(totalPages);
             }
             else{
-                createPage(nowPageNum-1);
-                nowPageNum+=1;
+                createPage(shopButton.nowPageNum-1);
+                shopButton.nowPageNum+=1;
             }
         }  
     }
