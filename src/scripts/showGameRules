@@ -59,5 +59,3 @@ function showGameRule(){
     oSpan.onclick = function(){
         oDiv.parentNode.removeChild(oDiv)
     }
-
-}
