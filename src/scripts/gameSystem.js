@@ -416,23 +416,23 @@ class shopButton{
     /**
      * 创建翻页按钮
      */
-    static createTurnPageBUtton(){
+    static createTurnPageButton(){
         //再商店的最下面创建两个按钮
         let prePage = new PIXI.Graphics();
         prePage.beginFill(0xFFFF00);
-        prePage.itself.zIndex =10;
+        prePage.zIndex =10;
         prePage.position.set(0,systemValue.size*11.5);
         prePage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
         shopArea.itself.addChild(prePage);
-        prePage.titleText = new PIXI.Text('上一页');
-        prePage.titleText.position.set(5,0);
-        prePage.titleText.zIndex = 15;
-        prePage.addChild(prePage.titleText);
+        let prePageTitleText = new Text('上一页');
+        prePage.addChild(prePageTitleText);
+        prePageTitleText.position.set(5,0);
+        prePageTitleText.zIndex = 15;
         prePage.interactive = true;
         //点击事件
-        prePage.on("pointerdown", onButtonDown1)
+        prePage.on("pointerdown", onButtonDown1);
         function onButtonDown1(){
-            for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
+            for(let i = (nowPageNum-1)*5;i<(nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
                 buttonNow.itself.removeChild(buttonNow.itself);
                 buttonNow.titleText.removeChild(buttonNow.titleText);
@@ -447,14 +447,14 @@ class shopButton{
         }  
         let nxtPage = new PIXI.Graphics();
         nxtPage.beginFill(0xFFFF00);
-        nxtPage.itself.zIndex =10;
+        nxtPage.zIndex =10;
         nxtPage.position.set(systemValue.size*3,systemValue.size*11.5);
         nxtPage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
         shopArea.itself.addChild(nxtPage);
-        nxtPage.titleText = new PIXI.Text('下一页');
-        nxtPage.titleText.position.set(5,0);
-        nxtPage.titleText.zIndex = 15;
-        nxtPage.addChild(nxtPage.titleText);
+        let nxtPageTitleText = new Text('下一页');
+        nxtPage.addChild(nxtPageTitleText);
+        nxtPageTitleText.position.set(5,0);
+        nxtPageTitleText.zIndex = 15;
         nxtPage.interactive = true;
         nxtPage.on("pointerdown", onButtonDown2)
         function onButtonDown2(){
@@ -465,7 +465,7 @@ class shopButton{
             else{
                 totalPages = buttonsNumber/5+1;
             }
-            for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
+            for(let i = (nowPageNum-1)*5;i<(nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
                 buttonNow.itself.removeChild(buttonNow.itself);
                 buttonNow.titleText.removeChild(buttonNow.titleText);
