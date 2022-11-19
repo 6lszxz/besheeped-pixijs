@@ -425,10 +425,10 @@ class shopButton{
         prePage.position.set(0,systemValue.size*11.5);
         prePage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
         shopArea.itself.addChild(prePage);
-        prePage.titleText = new PIXI.Text('上一页');
-        prePage.titleText.position.set(5,0);
-        prePage.titleText.zIndex = 15;
-        prePage.addChild(prePage.titleText);
+        let prePageTitleText = new Text('上一页');
+        prePage.addChild(prePageTitleText);
+        prePageTitleText.position.set(5,0);
+        prePageTitleText.zIndex = 15;
         prePage.interactive = true;
         //点击事件
         prePage.on("pointerdown", onButtonDown1);
@@ -452,10 +452,10 @@ class shopButton{
         nxtPage.position.set(systemValue.size*3,systemValue.size*11.5);
         nxtPage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
         shopArea.itself.addChild(nxtPage);
-        nxtPage.titleText = new PIXI.Text('下一页');
-        nxtPage.titleText.position.set(5,0);
-        nxtPage.titleText.zIndex = 15;
-        nxtPage.addChild(nxtPage.titleText);
+        let nxtPageTitleText = new Text('下一页');
+        nxtPage.addChild(nxtPageTitleText);
+        nxtPageTitleText.position.set(5,0);
+        nxtPageTitleText.zIndex = 15;
         nxtPage.interactive = true;
         nxtPage.on("pointerdown", onButtonDown2)
         function onButtonDown2(){
