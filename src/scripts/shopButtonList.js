@@ -36,7 +36,7 @@ let shopButtonList=[
     },
     {
         type : 'structure',
-        name : 'oilMaker',
+        name : 'oilmaker',
         cost : 1500,
     },
 ];
