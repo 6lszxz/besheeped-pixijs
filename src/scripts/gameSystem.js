@@ -421,7 +421,7 @@ class shopButton{
         //再商店的最下面创建两个按钮
         let prePage = new PIXI.Graphics();
         prePage.beginFill(0xFFFF00);
-        prePage.itself.zIndex =10;
+        prePage.zIndex =10;
         prePage.position.set(0,systemValue.size*11.5);
         prePage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
         shopArea.itself.addChild(prePage);
@@ -431,7 +431,7 @@ class shopButton{
         prePage.addChild(prePage.titleText);
         prePage.interactive = true;
         //点击事件
-        prePage.on("pointerdown", onButtonDown1)
+        prePage.on("pointerdown", onButtonDown1);
         function onButtonDown1(){
             for(let i = (nowPageNum-1)*5;i<(nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
@@ -448,7 +448,7 @@ class shopButton{
         }  
         let nxtPage = new PIXI.Graphics();
         nxtPage.beginFill(0xFFFF00);
-        nxtPage.itself.zIndex =10;
+        nxtPage.zIndex =10;
         nxtPage.position.set(systemValue.size*3,systemValue.size*11.5);
         nxtPage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
         shopArea.itself.addChild(nxtPage);
