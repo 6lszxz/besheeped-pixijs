@@ -417,7 +417,7 @@ class shopButton{
     /**
      * 创建翻页按钮
      */
-    static createTurnPageBUtton(){
+    static createTurnPageButton(){
         //再商店的最下面创建两个按钮
         let prePage = new PIXI.Graphics();
         prePage.beginFill(0xFFFF00);
@@ -433,7 +433,7 @@ class shopButton{
         //点击事件
         prePage.on("pointerdown", onButtonDown1)
         function onButtonDown1(){
-            for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
+            for(let i = (nowPageNum-1)*5;i<(nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
                 buttonNow.itself.removeChild(buttonNow.itself);
                 buttonNow.titleText.removeChild(buttonNow.titleText);
@@ -466,7 +466,7 @@ class shopButton{
             else{
                 totalPages = buttonsNumber/5+1;
             }
-            for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
+            for(let i = (nowPageNum-1)*5;i<(nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
                 buttonNow.itself.removeChild(buttonNow.itself);
                 buttonNow.titleText.removeChild(buttonNow.titleText);
