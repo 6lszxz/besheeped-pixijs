@@ -442,7 +442,7 @@ class shopButton{
         nxtPage.titleText.position.set(5,0);
         nxtPage.titleText.zIndex = 15;
         nxtPage.addChild(nxtPage.titleText);
-        prePage.interactive = true;
+        nxtPage.interactive = true;
         nxtPage.on("pointerdown", onButtonDown2)
         function onButtonDown2(){
             let totalPages ;//记录总页数
