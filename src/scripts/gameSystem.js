@@ -48,7 +48,7 @@ function init(){
     gameStage.create();
     gameMap.shuffleAll();
     structureSystem.createToMap('sheep');
-    shopButton.createAll();
+    shopButton.createPage(1);
     app.stage.addChild(version);
     soundSystem.BGM();
 }
@@ -387,11 +387,15 @@ class shopButton{
      * @type {number}
      */
     static buttonsNumber = shopButtonList.length;
-    /**
-     * 把所有的商店按钮显示在游戏中
+     /**
+     * 用来记录商店目前的页数
      */
-    static createAll(){
-        for(let i=0;i<shopButton.buttonsNumber;i++){
+    static nowPageNum = 1;
+    /**
+     * 把当前页面所有的商店按钮显示在游戏中
+     */
+    static createPage(pageNum){
+        for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
             let buttonNow = shopButtonList[i];
             shopButton.create(buttonNow,i);
         }
@@ -409,6 +413,72 @@ class shopButton{
         buttonNow.titleText.position.set(10,0);
         buttonNow.titleText.zIndex =15;
         buttonNow.itself.addChild(buttonNow.titleText);
+    }
+    /**
+     * 创建翻页按钮
+     */
+    static createTurnPageBUtton(){
+        //再商店的最下面创建两个按钮
+        let prePage = new PIXI.Graphics();
+        prePage.beginFill(0xFFFF00);
+        prePage.itself.zIndex =10;
+        prePage.position.set(0,systemValue.size*11.5);
+        prePage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
+        shopArea.itself.addChild(prePage);
+        prePage.titleText = new PIXI.Text('上一页');
+        prePage.titleText.position.set(5,0);
+        prePage.titleText.zIndex = 15;
+        prePage.addChild(prePage.titleText);
+        prePage.interactive = true;
+        //点击事件
+        prePage.on("pointerdown", onButtonDown1)
+        function onButtonDown1(){
+            for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
+                let buttonNow = shopButtonList[i];
+                buttonNow.itself.removeChild(buttonNow.itself);
+                buttonNow.titleText.removeChild(buttonNow.titleText);
+            }
+            if(nowPageNum == 1){
+                createPage(1);
+            }
+            else{
+                createPage(nowPageNum-1);
+                nowPageNum-=1;
+            }
+        }  
+        let nxtPage = new PIXI.Graphics();
+        nxtPage.beginFill(0xFFFF00);
+        nxtPage.itself.zIndex =10;
+        nxtPage.position.set(systemValue.size*3,systemValue.size*11.5);
+        nxtPage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
+        shopArea.itself.addChild(nxtPage);
+        nxtPage.titleText = new PIXI.Text('下一页');
+        nxtPage.titleText.position.set(5,0);
+        nxtPage.titleText.zIndex = 15;
+        nxtPage.addChild(nxtPage.titleText);
+        nxtPage.interactive = true;
+        nxtPage.on("pointerdown", onButtonDown2)
+        function onButtonDown2(){
+            let totalPages ;//记录总页数
+            if(buttonsNumber%5 ==  0){
+                totalPages = buttonsNumber/5;
+            }
+            else{
+                totalPages = buttonsNumber/5+1;
+            }
+            for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
+                let buttonNow = shopButtonList[i];
+                buttonNow.itself.removeChild(buttonNow.itself);
+                buttonNow.titleText.removeChild(buttonNow.titleText);
+            }
+            if(nowPageNum == totalPages){
+                createPage(totalPages);
+            }
+            else{
+                createPage(nowPageNum-1);
+                nowPageNum+=1;
+            }
+        }  
     }
     /**
      * 检测是否达到了购买的条件
@@ -801,5 +871,4 @@ let soundSystem={
 }
 
 export {createApp};
-
 
