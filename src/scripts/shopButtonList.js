@@ -39,7 +39,6 @@ let shopButtonList=[
         name : 'oilmaker',
         cost : 1500,
     },
-        
 ];
 
 export { shopButtonList };

@@ -1,4 +1,4 @@
-import BGM1 from '../assets/BGM1.mp3'
-import soundTapTile from '../assets/soundTapTile.mp3'
+import BGM1 from '../assets/sounds/BGM1.mp3'
+import soundTapTile from '../assets/sounds/soundTapTile.mp3'
 
 export{BGM1,soundTapTile};
