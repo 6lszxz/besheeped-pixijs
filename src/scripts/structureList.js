@@ -37,7 +37,7 @@ let structureList=[
     {
         id : "rabbit",
         requiring : "radish",
-        earing : 60,
+        earning : 60,
         startX : 6,
         startY : 2,
         willAddContent : false,
@@ -46,7 +46,7 @@ let structureList=[
     {
         id : "pig",
         requiring : "apple",
-        earing : 80,
+        earning : 80,
         startX : 7,
         startY : 2,
         willAddContent : true,

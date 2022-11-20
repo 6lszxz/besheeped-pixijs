@@ -5,6 +5,7 @@ import { structureList } from './structureList';
 import { shopButtonList } from './shopButtonList';
 import * as sounds from './sounds';
 import * as PIXISound from '@pixi/sound';
+import * as ui from './ui';
 /**
  * 整个PIXI应用，所有的元素都应是这个应用的子元素
  * @type {PIXI.Application}
@@ -14,7 +15,7 @@ const app = new PIXI.Application({
 });
 
 // 版本号
-let versionNumber='alpha 1.1.0';
+let versionNumber='alpha 1.2.0\npowered by 6lszxz, Xingxinyuxxy, qxr001, lzj26 and lwnzzz';
 
 // 以下都是系统流程中调用的函数
 /**
@@ -22,6 +23,10 @@ let versionNumber='alpha 1.1.0';
  * @function
  */
 function createApp(){
+    if(window.innerWidth<window.innerHeight){
+        alert('请不要使用竖屏进行游戏！');
+        window.top.close();
+    }
     // 给HTML文档添加WebGL画布
     document.body.appendChild(app.view);
     // 设定画面格式以及交互
@@ -30,7 +35,7 @@ function createApp(){
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth,window.innerHeight);
     app.stage.interactive = true;
-    init();
+    initArea.create();
     app.stage.scale.set(systemValue.scaleX,systemValue.scaleY);
 }
 /**
@@ -39,16 +44,13 @@ function createApp(){
  */
 function init(){
     soundSystem.init();
-    if(window.innerWidth<window.innerHeight){
-        alert('请不要使用竖屏进行游戏！');
-        window.top.close();
-    }
     let version = new PIXI.Text(versionNumber);
     Tile.loadContents();
     gameStage.create();
     gameMap.shuffleAll();
     structureSystem.createToMap('sheep');
     shopButton.createPage(1);
+    //shopButton.createTurnPageButton();
     app.stage.addChild(version);
     soundSystem.BGM();
 }
@@ -59,7 +61,7 @@ function init(){
  * @param tile {Tile}
  */
 function tapLoop(tile){
-     getMove(tile,function (){
+    getMove(tile,function (){
         tile.moveToBar();
         bar.checkMatch();
         gameMap.fallAndCreate(tile.x,tile.y);
@@ -327,17 +329,17 @@ class itemRequire{
         this.from = from;
         this.positionX = structureSystem.getStructureById(from).startX;
         this.positionY = structureSystem.getStructureById(from).startY-1;
-        this.itself = new PIXI.Graphics();
-        this.itself.beginFill(0x777777);
+        this.itself = new PIXI.Sprite.from(ui.requireImg);
         this.itself.zIndex = 10;
         this.itself.position.set(systemValue.toMapX(this.positionX),systemValue.toMapY(this.positionY));
-        this.itself.drawRect(0,0,systemValue.size*1,systemValue.size*1);
         farmArea.itself.addChild(this.itself);
         this.requiringContent = new PIXI.Sprite.from(contents[`${this.id}`]);
         this.requiringContent.position.set(0,0);
         this.requiringContent.zIndex = 15;
         this.itself.addChild(this.requiringContent);
-        this.lastText = new PIXI.Text(`${this.lastingTime}`);
+        this.lastText = new PIXI.Text(`${this.lastingTime}`,{
+            fill : 0xffffff,
+        });
         this.lastText.position.set(0,0);
         this.lastText.zIndex =20;
         this.itself.addChild(this.lastText);
@@ -386,7 +388,7 @@ class shopButton{
      * @type {number}
      */
     static buttonsNumber = shopButtonList.length;
-     /**
+    /**
      * 用来记录商店目前的页数
      */
     static nowPageNum = 1;
@@ -402,82 +404,91 @@ class shopButton{
     static create(buttonNow,i){
         buttonNow.isBought = false;
         buttonNow.canBeBought = false;
-        buttonNow.itself = new PIXI.Graphics();
-        buttonNow.itself.beginFill(0x584783);
+        buttonNow.itself = new PIXI.Sprite.from(ui.shopButtonImg);
         buttonNow.itself.zIndex =10;
         buttonNow.itself.position.set(0,systemValue.toMapY(i===0?i+1:i*2+1));
-        buttonNow.itself.drawRoundedRect(0,0,systemValue.size*6,systemValue.size*1.5);
         shopArea.itself.addChild(buttonNow.itself);
         buttonNow.titleText = new PIXI.Text(`${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`);
         buttonNow.titleText.position.set(10,0);
         buttonNow.titleText.zIndex =15;
         buttonNow.itself.addChild(buttonNow.titleText);
+        buttonNow.itself.on('pointertap',()=>{
+            if(farmInformation.coinBoard.coin>=buttonNow.cost && (!buttonNow.isBought)){
+                if(buttonNow.type === 'structure'){
+                    structureSystem.createToMap(buttonNow.name);
+                }
+                farmInformation.coinBoard.change(-(buttonNow.cost));
+                buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
+                buttonNow.isBought = true;
+                shopButton.checkCanBeBoughtAll();
+            }
+        });
     }
     /**
      * 创建翻页按钮
      */
-    static createTurnPageBUtton(){
+    static createTurnPageButton(){
         //再商店的最下面创建两个按钮
         let prePage = new PIXI.Graphics();
         prePage.beginFill(0xFFFF00);
-        prePage.itself.zIndex =10;
+        prePage.zIndex =10;
         prePage.position.set(0,systemValue.size*11.5);
         prePage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
         shopArea.itself.addChild(prePage);
-        prePage.titleText = new PIXI.Text('上一页');
-        prePage.titleText.position.set(5,0);
-        prePage.titleText.zIndex = 15;
-        prePage.addChild(prePage.titleText);
+        let prePageTitleText = new Text('上一页');
+        prePage.addChild(prePageTitleText);
+        prePageTitleText.position.set(5,0);
+        prePageTitleText.zIndex = 15;
         prePage.interactive = true;
         //点击事件
-        prePage.on("pointerdown", onButtonDown1)
+        prePage.on("pointerdown", onButtonDown1);
         function onButtonDown1(){
-            for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
+            for(let i = (shopButton.nowPageNum-1)*5;i<(shopButton.nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
                 buttonNow.itself.removeChild(buttonNow.itself);
                 buttonNow.titleText.removeChild(buttonNow.titleText);
             }
-            if(nowPageNum == 1){
-                createPage(1);
+            if(shopButton.nowPageNum === 1){
+                shopButton.createPage(1);
             }
             else{
-                createPage(nowPageNum-1);
-                nowPageNum-=1;
+                shopButton.createPage(shopButton.nowPageNum-1);
+                shopButton.nowPageNum-=1;
             }
-        }  
+        }
         let nxtPage = new PIXI.Graphics();
         nxtPage.beginFill(0xFFFF00);
-        nxtPage.itself.zIndex =10;
+        nxtPage.zIndex =10;
         nxtPage.position.set(systemValue.size*3,systemValue.size*11.5);
         nxtPage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
         shopArea.itself.addChild(nxtPage);
-        nxtPage.titleText = new PIXI.Text('下一页');
-        nxtPage.titleText.position.set(5,0);
-        nxtPage.titleText.zIndex = 15;
-        nxtPage.addChild(nxtPage.titleText);
+        let nxtPageTitleText = new Text('下一页');
+        nxtPage.addChild(nxtPageTitleText);
+        nxtPageTitleText.position.set(5,0);
+        nxtPageTitleText.zIndex = 15;
         nxtPage.interactive = true;
         nxtPage.on("pointerdown", onButtonDown2)
         function onButtonDown2(){
             let totalPages ;//记录总页数
-            if(buttonsNumber%5 ==  0){
-                totalPages = buttonsNumber/5;
+            if(shopButton.buttonsNumber%5 ===  0){
+                totalPages = shopButton.buttonsNumber/5;
             }
             else{
-                totalPages = buttonsNumber/5+1;
+                totalPages = shopButton.buttonsNumber/5+1;
             }
-            for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
+            for(let i = (shopButton.nowPageNum-1)*5;i<(shopButton.nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
                 buttonNow.itself.removeChild(buttonNow.itself);
                 buttonNow.titleText.removeChild(buttonNow.titleText);
             }
-            if(nowPageNum == totalPages){
-                createPage(totalPages);
+            if(shopButton.nowPageNum === totalPages){
+                shopButton.createPage(totalPages);
             }
             else{
-                createPage(nowPageNum-1);
-                nowPageNum+=1;
+                shopButton.createPage(shopButton.nowPageNum-1);
+                shopButton.nowPageNum+=1;
             }
-        }  
+        }
     }
     /**
      * 检测是否达到了购买的条件
@@ -489,12 +500,11 @@ class shopButton{
         }
     }
     static checkCanBeBought(buttonNow){
-        console.log(buttonNow);
         if(buttonNow.isBought){
             buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
             return;
         }
-        if(farmInformation.coinBoard.coin<buttonNow.cost && buttonNow.isBought){
+        if(farmInformation.coinBoard.coin<buttonNow.cost && !buttonNow.isBought){
             buttonNow.titleText.text= `${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`
             buttonNow.canBeBought = false;
             return;
@@ -503,17 +513,6 @@ class shopButton{
             buttonNow.titleText.text= `${buttonNow.name}\n 花费：${buttonNow.cost}，点击购买`
             buttonNow.canBeBought = true;
             buttonNow.itself.interactive = true;
-            buttonNow.itself.on('pointertap',()=>{
-                if(farmInformation.coinBoard.coin>=buttonNow.cost && (!buttonNow.isBought)){
-                    console.log('isTouched');
-                    if(buttonNow.type === 'structure'){
-                        structureSystem.createToMap(buttonNow.name);
-                    }
-                    farmInformation.coinBoard.change(-(buttonNow.cost));
-                    buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
-                    buttonNow.isBought = true;
-                }
-            });
         }
     }
 }
@@ -576,14 +575,12 @@ let gameStage = {
  * @property create function 把牧场区域创建到游戏舞台上
  */
 let farmArea ={
-    itself : new PIXI.Graphics(),
+    itself : new PIXI.Sprite.from(ui.farmImg),
     positionX : 0,
     positionY : 0,
     endPositionX : systemValue.size *10,
     create(){
-        this.itself.beginFill(0x66CCFF);
         this.itself.position.set(this.positionX, this.positionY);
-        this.itself.drawRect(0,0,systemValue.size*10,systemValue.size*12);
         this.itself.zIndex = 5;
         gameStage.itself.addChild(this.itself);
     },
@@ -600,7 +597,7 @@ let farmArea ={
 let farmInformation ={
     startX : farmArea.endPositionX+systemValue.size*1,
     startY : 0,
-    itself : new PIXI.Graphics(),
+    itself : new PIXI.Sprite.from(ui.informationImg),
     endPositionX :farmArea.endPositionX+systemValue.size*7,
     endPositionY : systemValue.size*3,
     /**
@@ -649,10 +646,8 @@ let farmInformation ={
         }
     },
     create() {
-        this.itself.beginFill(0x66CCFF);
         this.itself.zIndex =5;
         this.itself.position.set(this.startX,this.startY);
-        this.itself.drawRect(0,0,systemValue.size*6,systemValue.size*3);
         gameStage.itself.addChild(this.itself);
         this.coinBoard.create();
         this.gameDate.create();
@@ -675,16 +670,14 @@ let farmInformation ={
 let gameMap={
     startX : farmArea.endPositionX+systemValue.size*1,
     startY : farmInformation.endPositionY +systemValue.size*1,
-    itself : new PIXI.Graphics(),
+    itself : new PIXI.Sprite.from(ui.mapImg),
     tileLists : new Map(),
     typeNumbers : new Map(),
     create(){
         for(let i=0;i<Tile.types.length;i++){
             gameMap.typeNumbers.set(Tile.types[i],0);
         }
-        this.itself.beginFill(0x66CCFF);
         this.itself.position.set(this.startX, this.startY);
-        this.itself.drawRect(0,0,systemValue.size*6,systemValue.size*6);
         this.itself.zIndex = 5;
         gameStage.itself.addChild(this.itself);
     },
@@ -732,7 +725,7 @@ let gameMap={
 let bar={
     startX : gameMap.startX-systemValue.size/2,
     startY : gameMap.startY+systemValue.size*6.5,
-    itself : new PIXI.Graphics(),
+    itself : new PIXI.Sprite.from(ui.barImg),
     maxSize : 7,
     lengthNow : 0,
     tileLists : new Map(),
@@ -741,11 +734,8 @@ let bar={
         for(let i=0;i<Tile.types.length;i++){
             bar.typeNumbers.set(`${Tile.types[i]}`,0);
         }
-        this.itself.beginFill(0x66CCFF);
         this.itself.zIndex = 5;
         this.itself.position.set(this.startX,this.startY);
-        this.itself.drawRect(0,0,systemValue.size*7,systemValue.size);
-        console.log(this);
         gameStage.itself.addChild(this.itself);
     },
     toBarPosition(value){//输入数字
@@ -798,12 +788,10 @@ let bar={
 let shopArea={
     startX : gameMap.startX + systemValue.size*7,
     startY : 0,
-    itself : new PIXI.Graphics(),
+    itself : new PIXI.Sprite.from(ui.shopImg),
     create(){
-        this.itself.beginFill(0x66CCFF);
         this.itself.zIndex =5;
         this.itself.position.set(this.startX,this.startY);
-        this.itself.drawRect(0,0,systemValue.size*6,systemValue.size*12);
         gameStage.itself.addChild(this.itself);
     }
 }
@@ -829,11 +817,10 @@ function getMove(a,callback){//传入参数为具体的方格，在合成槽放�
     let ax=systemValue.toMapX(a.x);
     let ay=systemValue.toMapY(a.y);
     let time=setInterval(function (){
-        if(ax==endx&&ay==endy){
+        if(ax===endx&&ay===endy){
             gameMap.itself.removeChild(a.itself);
             clearInterval(time);
             callback();
-
         }else {
             var walkx = (endx -ax ) / 4;
             if (walkx > 0) {
@@ -847,6 +834,7 @@ function getMove(a,callback){//传入参数为具体的方格，在合成槽放�
             } else {
                 walky= Math.floor(walky);
             }
+            a.itself.zIndex=10;
             a.itself.position.set(ax+walkx,ay+walky);
             gameMap.itself.addChild(a.itself);
             ax+=walkx;
@@ -876,6 +864,59 @@ let soundSystem={
         PIXISound.sound.play('click');
     }
 }
+
+let RuleArea={
+    itself: new PIXI.Sprite.from(ui.ruleImg),
+    button: new PIXI.Text('开始吧！'),
+    create(){
+        this.itself.position.set(window.innerWidth/16, window.innerHeight/16);
+        this.button.position.set(window.innerWidth/2,window.innerHeight*15/16);
+        app.stage.addChild(this.itself);
+        app.stage.addChild(this.button);
+        this.button.interactive = true;
+        this.button.on('pointertap',()=>{
+            init(),
+            app.stage.removeChild(this.itself);
+            app.stage.removeChild(this.button);
+        });
+    }
+}
+
+let initArea={
+    logo : {
+        itself : new PIXI.Sprite.from(ui.logoImg),
+        positionX : window.innerWidth/2 - 518/2*systemValue.scaleX,
+        positionY : window.innerHeight/3,
+        create(){
+            this.itself.position.set(this.positionX, this.positionY);
+            app.stage.addChild(this.itself);
+        },
+        destory(){
+            app.stage.removeChild(this.itself);
+        },
+    },
+    button : {
+        itself : new PIXI.Text('开始游戏'),
+        positionX : window.innerWidth/2,
+        positionY : window.innerHeight*2/3,
+        create(){
+            this.itself.position.set(this.positionX, this.positionY);
+            app.stage.addChild(this.itself);
+        }
+    },
+    create(){
+        this.logo.create();
+        this.button.create();
+        this.button.itself.interactive = true;
+        this.button.itself.on('pointertap',()=>{
+            this.logo.destory();
+            RuleArea.create();
+            app.stage.removeChild(this.button.itself);
+        })
+    }
+
+}
+
 /**
  * 随机生成数字
  */
@@ -885,5 +926,6 @@ function getRandomInt(min, max) {
     let rand1 = Math.floor(Math.random() * (max - min + 1)) + min;//注意加一
     return rand1;
 }
-export {createApp};
+
+export {createApp,};
 
