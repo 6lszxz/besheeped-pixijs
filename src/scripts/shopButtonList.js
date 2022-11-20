@@ -12,12 +12,17 @@ let shopButtonList=[
     {
         type : 'structure',
         name : 'mayonnaiseMachine',
-        cost : 250,
+        cost : 200,
     },
     {
         type : 'structure',
         name : 'loom',
-        cost : 300,
+        cost : 225,
+    },
+    {
+        type : 'structure',
+        name : 'rabbit',
+        cost : 250,
     },
     /*
     {
@@ -25,24 +30,17 @@ let shopButtonList=[
         name : 'smileEggPress',
         cost : 500,
     },
-     */
-    {
-        type : 'structure',
-        name : 'rabbit',
-        cost : 800,
-    },
     {
         type : 'structure',
         name : 'pig',
         cost : 1000,
     },
-    /*
     {
         type : 'structure',
         name : 'oilMaker',
         cost : 1500,
     },
-     */
+    */
 ];
 
 export { shopButtonList };
