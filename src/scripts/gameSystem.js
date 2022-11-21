@@ -1,11 +1,19 @@
 import * as PIXI from 'pixi.js';
 import * as contents from './contents';
 import * as structures from './structures'
-import { structureList } from './structureList';
-import { shopButtonList } from './shopButtonList';
-import * as sounds from './sounds';
-import * as PIXISound from '@pixi/sound';
+import {structureList} from './structureList';
+import {shopButtonList} from './shopButtonList';
 import * as ui from './ui';
+import {systemValue} from "@/scripts/systems/systemValue";
+import {initArea} from "@/scripts/gameObjects/initArea";
+import {soundSystem} from "@/scripts/systems/soundSystem";
+import {farmArea} from "@/scripts/gameObjects/farmArea";
+import {farmInformation} from "@/scripts/gameObjects/farmInformation";
+import {gameMap} from "@/scripts/gameObjects/gameMap";
+import {shopArea} from "@/scripts/gameObjects/shopArea";
+import {bar} from "@/scripts/gameObjects/bar";
+import {getMove} from "@/scripts/systems/getMove";
+
 /**
  * 整个PIXI应用，所有的元素都应是这个应用的子元素
  * @type {PIXI.Application}
@@ -15,7 +23,7 @@ const app = new PIXI.Application({
 });
 
 // 版本号
-let versionNumber='alpha 1.2.0\npowered by 6lszxz, Xingxinyuxxy, qxr001, lzj26 and lwnzzz';
+let versionNumber='alpha 1.2.1\npowered by 6lszxz, Xingxinyuxxy, qxr001, lzj26 and lwnzzz';
 
 // 以下都是系统流程中调用的函数
 /**
@@ -517,33 +525,6 @@ class shopButton{
     }
 }
 
-//以下是单个物体们
-/**
- * 系统变量，包括精灵缩放大小、 每个块的像素数、最近一次消除的元素名称等
- * @type {{scaleX: number, scaleY: number, size: number, pointerNow: string, toMapX(*): *, setPointerNow(*): void, toMapY(*): *}}
- * @property number size 块的像素数，根据星露谷这边的素材，因此用的就是48
- * @property number scaleX X轴缩放
- * @property number scaleY Y轴缩放
- * @property string pointerNow 最近消除的元素名称
- * @property setPointerNow function 更改最近消除的元素名称
- * @property toMapX function 把传入的x坐标变成显示器上的全局坐标
- * @property toMapY function 把传入的y坐标变成显示器上的全局坐标
- */
-let systemValue={
-    size :48,
-    scaleX : window.innerWidth/1920,
-    scaleY : window.innerHeight/1080,
-    pointerNow : '',
-    setPointerNow(id){
-        systemValue.pointerNow = id;
-    },
-    toMapX(x){
-        return (x-1)*systemValue.size;
-    },
-    toMapY(y){
-        return (y-1)*systemValue.size;
-    },
-}
 /**
  * 游戏舞台，放所有者东西的地方
  * @type {{positionY: number, itself: Container, create(): void, positionX: number}}
@@ -566,366 +547,9 @@ let gameStage = {
         shopArea.create();
     },
 }
-/**
- * 牧场区域，是放结构和产生需求的地方
- * @type {{positionY: number, itself: PIXI.Graphics, create(): void, positionX: number}}
- * @property itself PIXI.Graphics 牧场背景
- * @property positionX number 左上角顶点横坐标
- * @property positionY number 左上角顶点纵坐标
- * @property create function 把牧场区域创建到游戏舞台上
- */
-let farmArea ={
-    itself : new PIXI.Sprite.from(ui.farmImg),
-    positionX : 0,
-    positionY : 0,
-    endPositionX : systemValue.size *10,
-    create(){
-        this.itself.position.set(this.positionX, this.positionY);
-        this.itself.zIndex = 5;
-        gameStage.itself.addChild(this.itself);
-    },
-}
-/**
- * 牧场信息，就是放金币和游戏时间（现在是第几年第几周的地方）
- * @type {{itself: PIXI.Graphics, gameDate: {itself: PIXI.Text, week: number, year: number, pass(): void, create(): void, startY: number, startX: number}, coinBoard: {itself: PIXI.Text, change(*): void, create(): void, startY: number, startX: number, coin: number}, endPositionY: number, endPositionX: number, create(): void, startY: number, startX: number}}
- * @property startX number 牧场信息框的左上角横坐标
- * @property startY number 牧场信息框的左上角纵坐标
- * @property itself PIXI.Graphics 信息框奔赴，是一个画的几何图形
- * @property coinBoard Object 金币信息
- * @property gameDate Object 游戏日期，一个回合为一周
- */
-let farmInformation ={
-    startX : farmArea.endPositionX+systemValue.size*1,
-    startY : 0,
-    itself : new PIXI.Sprite.from(ui.informationImg),
-    endPositionX :farmArea.endPositionX+systemValue.size*7,
-    endPositionY : systemValue.size*3,
-    /**
-     * 金币信息
-     * @property startX number 左上角横坐标
-     * @property startY number 左上角纵坐标
-     * @property itself PIXI.Text 金币的文本
-     * @property create function 创建到画面上
-     * @property change function 改变所持的金币值，正数为增负数为减
-     */
-    coinBoard : {
-        startX : 10,
-        startY : 10,
-        itself : new PIXI.Text(),
-        coin : 50,
-        create(){
-            this.itself.position.set(this.startX,this.startY);
-            farmInformation.itself.addChild(this.itself);
-            this.itself.text = `金币：${this.coin}`;
-        },
-        change(value){
-            console.log(value);
-            console.log(this.coin)
-            this.coin += value;
-            this.itself.text = `金币：${this.coin}`;
-        }
-    },
-    gameDate :{
-        startX :10,
-        startY : 50,
-        itself : new PIXI.Text(),
-        year : 1,
-        week : 1,
-        create(){
-            this.itself.position.set(this.startX,this.startY);
-            farmInformation.itself.addChild(this.itself);
-            this.itself.text = `第${this.year}年，第${this.week}周`;
-        },
-        pass(){
-            this.week++;
-            if(this.week>52){
-                this.week=1;
-                this.year++;
-            }
-            this.itself.text = `第${this.year}年，第${this.week}周`;
-        }
-    },
-    create() {
-        this.itself.zIndex =5;
-        this.itself.position.set(this.startX,this.startY);
-        gameStage.itself.addChild(this.itself);
-        this.coinBoard.create();
-        this.gameDate.create();
-    }
-}
 
-/**
- * 游戏地图，就是那个6*6的格子
- * @type {{itself: PIXI.Graphics, shuffleAll(): void, typeNumbers: Map<any, any>, create(): void, startY: number, startX: number, checkId(*): boolean, fallAndCreate(*, *): void, tileLists: Map<any, any>}}
- * @property itself PIXI.Graphics 游戏地图背景
- * @property positionX number 左上角顶点横坐标
- * @property positionY number 左上角顶点纵坐标
- * @property tileLists Map 地图各个部分的块映射，键为`${x},${y}`
- * @property typeNumbers Map 地图上特定id的块有多少个
- * @property create 把游戏地图创建到游戏舞台上
- * @property fallAndCreate 消除之后把上面的落下来，然后创建一个新的
- * @property shuffleAll 生成一个棋盘
- * @property checkId 检测棋盘上特定的块个数是否大于等于3
- */
-let gameMap={
-    startX : farmArea.endPositionX+systemValue.size*1,
-    startY : farmInformation.endPositionY +systemValue.size*1,
-    itself : new PIXI.Sprite.from(ui.mapImg),
-    tileLists : new Map(),
-    typeNumbers : new Map(),
-    create(){
-        for(let i=0;i<Tile.types.length;i++){
-            gameMap.typeNumbers.set(Tile.types[i],0);
-        }
-        this.itself.position.set(this.startX, this.startY);
-        this.itself.zIndex = 5;
-        gameStage.itself.addChild(this.itself);
-    },
-    fallAndCreate(X,Y){
-        if(Y!==0){
-            for(let i=Y-1;i>=1;i--){
-                gameMap.tileLists.set(`${X},${i+1}`,gameMap.tileLists.get(`${X},${i}`));
-                let tempTile =gameMap.tileLists.get(`${X},${i+1}`);
-                tempTile.itself.position.set(systemValue.toMapX(X),systemValue.toMapY(i+1));
-                tempTile.y++;
-            }
-            gameMap.tileLists.set(`${X},1`,new Tile('random'));
-            let tempTile =gameMap.tileLists.get(`${X},1`);
-            tempTile.createToMap(X,1);
-        }
-    },
-    shuffleAll(){
-        for(let i=1;i<=6;i++){
-            for (let j=1;j<=6;j++){
-                let tile = new Tile('random');
-                tile.createToMap(i,j);
-            }
-        }
-    },
-    checkId(id){
-        return gameMap.typeNumbers.get(id)>=3;
-    }
-}
-/**
- * 合成槽
- * @type {{itself: PIXI.Graphics, toBarPosition(*): *, lengthNow: number, typeNumbers: Map<any, any>, create(): void, refresh(): void, checkMatch(): void, startY: number, maxSize: number, startX: number, checkFull(): void, tileLists: Map<any, any>}}
- * @property startX number 左上角横坐标
- * @property startY number 左上角纵坐标
- * @property itself PIXI.Graphics 合成槽本身
- * @property maxSize number 合成槽的最大大小
- * @property lengthNow number 合成槽目前的容量大小
- * @property tileLists Map 合成槽中的块种类
- * @property typeNumbers Map 各种块的数量
- * @property create function 在地图上创建合成槽
- * @property toBarPosition function 把合成槽中的位置转换成显示器上的坐标
- * @property refresh function 刷新合成槽
- * @property checkMatch function 判断是否满足了消除条件
- * @property checkFull function 判断合成槽是否已经满了
- */
-let bar={
-    startX : gameMap.startX-systemValue.size/2,
-    startY : gameMap.startY+systemValue.size*6.5,
-    itself : new PIXI.Sprite.from(ui.barImg),
-    maxSize : 7,
-    lengthNow : 0,
-    tileLists : new Map(),
-    typeNumbers : new Map(),
-    create(){
-        for(let i=0;i<Tile.types.length;i++){
-            bar.typeNumbers.set(`${Tile.types[i]}`,0);
-        }
-        this.itself.zIndex = 5;
-        this.itself.position.set(this.startX,this.startY);
-        gameStage.itself.addChild(this.itself);
-    },
-    toBarPosition(value){//输入数字
-        return systemValue.size*(value-1);
-    },
-    refresh(){
-        for(let i=1;i<= this.lengthNow;i++){
-            this.tileLists.get(i).itself.position.set(bar.toBarPosition(i),0);
-        }
-    },
-    checkMatch(){
-        for(let i=0;i<Tile.types.length;i++){
-            let tempNumber = bar.typeNumbers.get(Tile.types[i]);
-            if(tempNumber>=3){
-                while(tempNumber!==0){
-                    for(let tile of bar.tileLists.values()){
-                        if(tile.id ===Tile.types[i]){
-                            console.log(tile);
-                            tile.removeFromBar();
-                            break;
-                        }
-                    }
-                    tempNumber = bar.typeNumbers.get(Tile.types[i]);
-                }
-                systemValue.setPointerNow(Tile.types[i]);
-            }
-        }
-        bar.refresh();
-        bar.checkFull();
-    },
-    checkFull(){
-        console.log(bar.tileLists)
-        if(bar.lengthNow===bar.maxSize){
-            farmInformation.coinBoard.change(-100);
-            for(let i=7;i>2;i--){
-                bar.tileLists.get(i).removeFromBar();
-            }
-            bar.refresh();
-        }
-    }
-}
-/**
- * 商店位置
- * @type {{itself: PIXI.Graphics, create(): void, startY: number, startX: number}}
- * @property startX number 左上角x坐标
- * @property startY number 左上角y坐标
- * @property itself PIXI.Graphics 本身，几何图形
- * @property create function 把商店背景显示出来
- */
-let shopArea={
-    startX : gameMap.startX + systemValue.size*7,
-    startY : 0,
-    itself : new PIXI.Sprite.from(ui.shopImg),
-    create(){
-        this.itself.zIndex =5;
-        this.itself.position.set(this.startX,this.startY);
-        gameStage.itself.addChild(this.itself);
-    }
-}
-/**
- * 实现动画效果
- */
-function getMove(a,callback){//传入参数为具体的方格，在合成槽放的第几个位置
-    soundSystem.clickMusic();
-    let isAddedBefore = false;
-    let endatat=0;//记录在合成槽的第几个放元素
-    for(let i=1;i<=bar.lengthNow;i++){
-        if(bar.tileLists.get(i).id ===a.id ){
-            isAddedBefore = true;
-            endatat=i+1;
-            break;
-        }
-    }
-    if(!isAddedBefore){
-        endatat=bar.lengthNow+1;
-    }
-    let endx=(endatat-1)*48-24;//合成槽在方格的对应坐标
-    let endy=312;//同上,312
-    let ax=systemValue.toMapX(a.x);
-    let ay=systemValue.toMapY(a.y);
-    let time=setInterval(function (){
-        if(ax===endx&&ay===endy){
-            gameMap.itself.removeChild(a.itself);
-            clearInterval(time);
-            callback();
-        }else {
-            var walkx = (endx -ax ) / 4;
-            if (walkx > 0) {
-                walkx = Math.ceil(walkx);
-            } else {
-                walkx = Math.floor(walkx);
-            }
-            var walky = (endy - ay) / 3;
-            if (walky> 0) {
-                walky = Math.ceil(walky);
-            } else {
-                walky= Math.floor(walky);
-            }
-            a.itself.zIndex=10;
-            a.itself.position.set(ax+walkx,ay+walky);
-            gameMap.itself.addChild(a.itself);
-            ax+=walkx;
-            ay+=walky;
-        }
-
-    },20)
-}
-let soundSystem={
-    init(){
-        PIXISound.sound.add('click',sounds.soundTapTile);
-        PIXISound.sound.add('BGM1',sounds.BGM1);
-        PIXISound.sound.add('BGM2',sounds.BGM2);
-        PIXISound.sound.add('BGM3',sounds.BGM3);
-        PIXISound.sound.add('BGM4',sounds.BGM4);
-        PIXISound.sound.add('BGM5',sounds.BGM5);
-        PIXISound.sound.add('BGM6',sounds.BGM6);
-        PIXISound.sound.add('BGM7',sounds.BGM7);
-    },
-    BGM(){
-        let BGMrandom=['BGM1','BGM2','BGM3','BGM4','BGM5','BGM6','BGM7'];
-        let i=getRandomInt(0,6);
-        PIXISound.sound.play(BGMrandom[i],soundSystem.BGM);
-
-    },
-    clickMusic(){
-        PIXISound.sound.play('click');
-    }
-}
-
-let RuleArea={
-    itself: new PIXI.Sprite.from(ui.ruleImg),
-    button: new PIXI.Text('开始吧！'),
-    create(){
-        this.itself.position.set(window.innerWidth/16, window.innerHeight/16);
-        this.button.position.set(window.innerWidth/2,window.innerHeight*15/16);
-        app.stage.addChild(this.itself);
-        app.stage.addChild(this.button);
-        this.button.interactive = true;
-        this.button.on('pointertap',()=>{
-            init(),
-            app.stage.removeChild(this.itself);
-            app.stage.removeChild(this.button);
-        });
-    }
-}
-
-let initArea={
-    logo : {
-        itself : new PIXI.Sprite.from(ui.logoImg),
-        positionX : window.innerWidth/2 - 518/2*systemValue.scaleX,
-        positionY : window.innerHeight/3,
-        create(){
-            this.itself.position.set(this.positionX, this.positionY);
-            app.stage.addChild(this.itself);
-        },
-        destory(){
-            app.stage.removeChild(this.itself);
-        },
-    },
-    button : {
-        itself : new PIXI.Text('开始游戏'),
-        positionX : window.innerWidth/2,
-        positionY : window.innerHeight*2/3,
-        create(){
-            this.itself.position.set(this.positionX, this.positionY);
-            app.stage.addChild(this.itself);
-        }
-    },
-    create(){
-        this.logo.create();
-        this.button.create();
-        this.button.itself.interactive = true;
-        this.button.itself.on('pointertap',()=>{
-            this.logo.destory();
-            RuleArea.create();
-            app.stage.removeChild(this.button.itself);
-        })
-    }
-
-}
-
-/**
- * 随机生成数字
- */
-function getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    let rand1 = Math.floor(Math.random() * (max - min + 1)) + min;//注意加一
-    return rand1;
-}
-
-export {createApp,};
+export {
+    createApp,app,itemRequire,Tile,tapLoop, gameStage, shopButton, structureSystem,
+    versionNumber,init,
+};
 

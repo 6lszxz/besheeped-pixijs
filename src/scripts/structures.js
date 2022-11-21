@@ -7,6 +7,7 @@ import loom from '../assets/structures/loom.png'
 import rabbit from '../assets/structures/rabbit.png'
 import smileEggPress from '../assets/structures/smileEggPress.png'
 import oilMaker from '../assets/structures/oilMaker.png'
+
 export{
     sheep, cow, chicken, mayonnaiseMachine, loom, rabbit, pig, smileEggPress, oilMaker,
 }
