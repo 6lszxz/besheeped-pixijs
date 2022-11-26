@@ -400,10 +400,19 @@ class shopButton{
      * 用来记录商店目前的页数
      */
     static nowPageNum = 1;
+    static totalPages  = shopButton.caculateTatalPage();//记录总页数
+    static caculateTatalPage() {
+        if (shopButton.buttonsNumber % 5 == 0) {
+            shopButton.totalPages = shopButton.buttonsNumber / 5;
+        } else {
+            shopButton.totalPages = shopButton.buttonsNumber / 5 + 1;
+        }
+        return shopButton.totalPages;
+    }
     /**
      * 把当前页面所有的商店按钮显示在游戏中
      */
-    static createPage(pageNum){
+   static createPage(pageNum){
         for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
             let buttonNow = shopButtonList[i];
             shopButton.create(buttonNow,i);
@@ -414,7 +423,7 @@ class shopButton{
         buttonNow.canBeBought = false;
         buttonNow.itself = new PIXI.Sprite.from(ui.shopButtonImg);
         buttonNow.itself.zIndex =10;
-        buttonNow.itself.position.set(0,systemValue.toMapY(i===0?i+1:i*2+1));
+        buttonNow.itself.position.set(0,systemValue.toMapY(i%5===0?i%5+1:i%5*2+1));
         shopArea.itself.addChild(buttonNow.itself);
         buttonNow.titleText = new PIXI.Text(`${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`);
         buttonNow.titleText.position.set(10,0);
@@ -432,71 +441,68 @@ class shopButton{
             }
         });
     }
+    static delete(buttonNow){
+        shopArea.itself.removeChild(buttonNow.itself);
+        buttonNow.itself.removeChild(buttonNow.titleText);
+    }
     /**
      * 创建翻页按钮
      */
     static createTurnPageButton(){
         //再商店的最下面创建两个按钮
-        let prePage = new PIXI.Graphics();
-        prePage.beginFill(0xFFFF00);
+        let prePage = new PIXI.Sprite.from(ui.shopButtonImg);
         prePage.zIndex =10;
-        prePage.position.set(0,systemValue.size*11.5);
-        prePage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
+        prePage.position.set(0,systemValue.size*11);
+        prePage.drawRect(0,0,systemValue.size*3,systemValue.size);
         shopArea.itself.addChild(prePage);
-        let prePageTitleText = new Text('上一页');
+        let prePageTitleText = new PIXI.Text('上一页');
         prePage.addChild(prePageTitleText);
-        prePageTitleText.position.set(5,0);
+        prePageTitleText.position.set(15,0);
         prePageTitleText.zIndex = 15;
         prePage.interactive = true;
+        prePage.buttonMode = true;
         //点击事件
-        prePage.on("pointerdown", onButtonDown1);
-        function onButtonDown1(){
+        prePage.on('pointertap', ()=>
+        {
+            console.log("点击成功");
             for(let i = (shopButton.nowPageNum-1)*5;i<(shopButton.nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
-                buttonNow.itself.removeChild(buttonNow.itself);
-                buttonNow.titleText.removeChild(buttonNow.titleText);
+                shopButton.delete(buttonNow);
             }
-            if(shopButton.nowPageNum === 1){
+            if(shopButton.nowPageNum == 1){
                 shopButton.createPage(1);
             }
             else{
                 shopButton.createPage(shopButton.nowPageNum-1);
                 shopButton.nowPageNum-=1;
             }
-        }
-        let nxtPage = new PIXI.Graphics();
-        nxtPage.beginFill(0xFFFF00);
+        });
+        let nxtPage = new PIXI.Sprite.from(ui.shopButtonImg);
         nxtPage.zIndex =10;
-        nxtPage.position.set(systemValue.size*3,systemValue.size*11.5);
-        nxtPage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
+        nxtPage.position.set(systemValue.size*3,systemValue.size*11);
+        nxtPage.drawRect(0,0,systemValue.size*3,systemValue.size);
         shopArea.itself.addChild(nxtPage);
-        let nxtPageTitleText = new Text('下一页');
-        nxtPage.addChild(nxtPageTitleText);
-        nxtPageTitleText.position.set(5,0);
+        let nxtPageTitleText = new PIXI.Text('下一页');
+        nxtPageTitleText.position.set(15,0);
         nxtPageTitleText.zIndex = 15;
+        nxtPage.addChild(nxtPageTitleText);
         nxtPage.interactive = true;
-        nxtPage.on("pointerdown", onButtonDown2)
-        function onButtonDown2(){
-            let totalPages ;//记录总页数
-            if(shopButton.buttonsNumber%5 ===  0){
-                totalPages = shopButton.buttonsNumber/5;
-            }
-            else{
-                totalPages = shopButton.buttonsNumber/5+1;
-            }
+        nxtPage.buttonMode = true;
+        nxtPage.on('pointertap', ()=>
+        {
+            console.log("点击成功");
             for(let i = (shopButton.nowPageNum-1)*5;i<(shopButton.nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
-                buttonNow.itself.removeChild(buttonNow.itself);
-                buttonNow.titleText.removeChild(buttonNow.titleText);
+                shopButton.delete(buttonNow);
             }
-            if(shopButton.nowPageNum === totalPages){
-                shopButton.createPage(totalPages);
+            if(shopButton.nowPageNum == shopButton.totalPages){
+                shopButton.createPage(shopButton.totalPages);
             }
             else{
-                shopButton.createPage(shopButton.nowPageNum-1);
+                shopButton.createPage(shopButton.nowPageNum+1);
                 shopButton.nowPageNum+=1;
             }
-        }
+        });
     }
     /**
      * 检测是否达到了购买的条件
