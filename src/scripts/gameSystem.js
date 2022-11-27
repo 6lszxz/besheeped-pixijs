@@ -58,7 +58,7 @@ function init(){
     gameMap.shuffleAll();
     structureSystem.createToMap('sheep');
     shopButton.createPage(1);
-    //shopButton.createTurnPageButton();
+    shopButton.createTurnPageButton();
     app.stage.addChild(version);
     soundSystem.BGM();
 }
@@ -412,34 +412,46 @@ class shopButton{
     /**
      * 把当前页面所有的商店按钮显示在游戏中
      */
-   static createPage(pageNum){
+    static createPage(pageNum){
         for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
             let buttonNow = shopButtonList[i];
             shopButton.create(buttonNow,i);
         }
     }
     static create(buttonNow,i){
-        buttonNow.isBought = false;
-        buttonNow.canBeBought = false;
-        buttonNow.itself = new PIXI.Sprite.from(ui.shopButtonImg);
-        buttonNow.itself.zIndex =10;
-        buttonNow.itself.position.set(0,systemValue.toMapY(i%5===0?i%5+1:i%5*2+1));
-        shopArea.itself.addChild(buttonNow.itself);
-        buttonNow.titleText = new PIXI.Text(`${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`);
-        buttonNow.titleText.position.set(10,0);
-        buttonNow.titleText.zIndex =15;
-        buttonNow.itself.addChild(buttonNow.titleText);
-        buttonNow.itself.on('pointertap',()=>{
-            if(farmInformation.coinBoard.coin>=buttonNow.cost && (!buttonNow.isBought)){
-                if(buttonNow.type === 'structure'){
-                    structureSystem.createToMap(buttonNow.name);
+        if(buttonNow.isBought == true){
+            buttonNow.itself = new PIXI.Sprite.from(ui.shopButtonImg);
+            buttonNow.itself.zIndex =10;
+            buttonNow.itself.position.set(0,systemValue.toMapY(i%5===0?i%5+1:i%5*2+1));
+            shopArea.itself.addChild(buttonNow.itself);
+            buttonNow.titleText = new PIXI.Text(`${buttonNow.name}\n 已购买`);
+            buttonNow.titleText.position.set(10,0);
+            buttonNow.titleText.zIndex =15;
+            buttonNow.itself.addChild(buttonNow.titleText);
+        }
+        else {
+            buttonNow.isBought = false;
+            buttonNow.canBeBought = false;
+            buttonNow.itself = new PIXI.Sprite.from(ui.shopButtonImg);
+            buttonNow.itself.zIndex = 10;
+            buttonNow.itself.position.set(0, systemValue.toMapY(i % 5 === 0 ? i % 5 + 1 : i % 5 * 2 + 1));
+            shopArea.itself.addChild(buttonNow.itself);
+            buttonNow.titleText = new PIXI.Text(`${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`);
+            buttonNow.titleText.position.set(0.5, 0);
+            buttonNow.titleText.zIndex = 15;
+            buttonNow.itself.addChild(buttonNow.titleText);
+            buttonNow.itself.on('pointertap', () => {
+                if (farmInformation.coinBoard.coin >= buttonNow.cost && (!buttonNow.isBought)) {
+                    if (buttonNow.type === 'structure') {
+                        structureSystem.createToMap(buttonNow.name);
+                    }
+                    farmInformation.coinBoard.change(-(buttonNow.cost));
+                    buttonNow.titleText.text = `${buttonNow.name}\n 已购买`
+                    buttonNow.isBought = true;
+                    shopButton.checkCanBeBoughtAll();
                 }
-                farmInformation.coinBoard.change(-(buttonNow.cost));
-                buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
-                buttonNow.isBought = true;
-                shopButton.checkCanBeBoughtAll();
-            }
-        });
+            });
+        }
     }
     static delete(buttonNow){
         shopArea.itself.removeChild(buttonNow.itself);
@@ -450,14 +462,15 @@ class shopButton{
      */
     static createTurnPageButton(){
         //再商店的最下面创建两个按钮
-        let prePage = new PIXI.Sprite.from(ui.shopButtonImg);
+        let prePage = new PIXI.Graphics();
+        prePage.beginFill(0xFFFF00);
         prePage.zIndex =10;
-        prePage.position.set(0,systemValue.size*11);
+        prePage.position.set(0,systemValue.size*10.5);
         prePage.drawRect(0,0,systemValue.size*3,systemValue.size);
         shopArea.itself.addChild(prePage);
         let prePageTitleText = new PIXI.Text('上一页');
         prePage.addChild(prePageTitleText);
-        prePageTitleText.position.set(15,0);
+        prePageTitleText.position.set(30,5);
         prePageTitleText.zIndex = 15;
         prePage.interactive = true;
         prePage.buttonMode = true;
@@ -477,13 +490,14 @@ class shopButton{
                 shopButton.nowPageNum-=1;
             }
         });
-        let nxtPage = new PIXI.Sprite.from(ui.shopButtonImg);
+        let nxtPage = new PIXI.Graphics();
+        nxtPage.beginFill(0x00FF00);
         nxtPage.zIndex =10;
-        nxtPage.position.set(systemValue.size*3,systemValue.size*11);
+        nxtPage.position.set(systemValue.size*3,systemValue.size*10.5);
         nxtPage.drawRect(0,0,systemValue.size*3,systemValue.size);
         shopArea.itself.addChild(nxtPage);
         let nxtPageTitleText = new PIXI.Text('下一页');
-        nxtPageTitleText.position.set(15,0);
+        nxtPageTitleText.position.set(30,5);
         nxtPageTitleText.zIndex = 15;
         nxtPage.addChild(nxtPageTitleText);
         nxtPage.interactive = true;
@@ -530,7 +544,6 @@ class shopButton{
         }
     }
 }
-
 /**
  * 游戏舞台，放所有者东西的地方
  * @type {{positionY: number, itself: Container, create(): void, positionX: number}}
