@@ -179,6 +179,21 @@ class Tile {
         gameMap.typeNumbers.set(this.id,tempNumber);
         bar.itself.addChild(this.itself);//创建对象到合成槽中
         this.itself.interactive=false;
+        //随机事件 寒潮
+        if(randomEvent.isColdWave>0)
+        {
+            randomEvent.isColdWave-=1;
+        }else
+        {
+            for(let i=1;i<=6;i++)//恢复被冻结的元素
+            {
+                for(let j=1;j<=6;j++)
+                {
+                    let tempTile =gameMap.tileLists.get(`${i},${j}`);
+                    tempTile.itself.interactive=true;
+                }
+            }
+        }
 
     }
 
@@ -954,10 +969,12 @@ function getRandomInt(min, max) {
  * achieve() 实现随机事件的效果
  * randomNumber  记录要显示随机事件的序号 也可以控制出现的概率
  * button j继续游戏
+ * isColdWave 随机事件  寒潮  默认冻结 5 回合
  */
 
 let randomEvent={
     button: new PIXI.Text('继续游戏'),
+    isColdWave: 0,
     create(){
         for(let i=1;i<=6;i++)//在随机事件图片出现时不能点击地图
         {
@@ -968,7 +985,7 @@ let randomEvent={
                 tempTile.itself.interactive=false;
             }
         }
-       this.randomNumble=getRandomInt(4,4);//调最大值即可实现概率,1到5为出现
+       this.randomNumble=getRandomInt(1,5);//调最大值即可实现概率,1到5为出现
         if(this.randomNumble>=0&&this.randomNumble<=5){
             if(this.randomNumble===1){
                 this.itself= new PIXI.Sprite.from(random.random01);
@@ -1014,7 +1031,15 @@ let randomEvent={
             }else if(this.randomNumble===2){//动物破坏了他人财物,扣25
                 farmInformation.coinBoard.isDestruction=true;
 
-            }else if(this.randomNumble===3){//寒潮
+            }else if(this.randomNumble===3){//寒潮  冻结 5 回合
+                this.isColdWave=5;
+                    for(let j=0;j<18;j++)//开始冻结,这个j控制最多冻结多少个  现在默认最多冻结一半 就是18个 因为随机数会重复
+                    {
+                        let x=getRandomInt(1,6);
+                        let y=getRandomInt(1,6);
+                        let tempTile =gameMap.tileLists.get(`${x},${y}`);
+                        tempTile.itself.interactive=false;
+                    }
 
             }else if(this.randomNumble===4){//动物心情好,下一次需求奖励的钱翻倍
                 farmInformation.coinBoard.isDoubleCoin=true;
