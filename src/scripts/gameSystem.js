@@ -968,7 +968,7 @@ function getRandomInt(min, max) {
  * *create() 显示随机事件
  * achieve() 实现随机事件的效果
  * randomNumber  记录要显示随机事件的序号 也可以控制出现的概率
- * button j继续游戏
+ * button 继续游戏
  * isColdWave 随机事件  寒潮  默认冻结 5 回合
  */
 
@@ -981,52 +981,62 @@ let randomEvent={
             for(let j=1;j<=6;j++)
             {
                 let tempTile =gameMap.tileLists.get(`${i},${j}`);
-                console.log(tempTile);
                 tempTile.itself.interactive=false;
             }
         }
-       this.randomNumble=getRandomInt(1,5);//调最大值即可实现概率,1到5为出现
-        if(this.randomNumble>=0&&this.randomNumble<=5){
-            if(this.randomNumble===1){
-                this.itself= new PIXI.Sprite.from(random.random01);
-            }else if(this.randomNumble===2){
-                this.itself= new PIXI.Sprite.from(random.random02);
-            }else if(this.randomNumble===3){
-                this.itself= new PIXI.Sprite.from(random.random03);
-            }else if(this.randomNumble===4){
-                this.itself= new PIXI.Sprite.from(random.random04);
-            }else {
-                this.itself= new PIXI.Sprite.from(random.random05);
-            }
-            this.x=farmArea.endPositionX+systemValue.size*6;
-            this.y=gameMap.startY+systemValue.size*1;
-            this.itself.position.set(this.x,this.y);//图片位置
-            this.itself.width=520;
-            this.itself.height=430;
-            this.button.position.set(this.x+this.itself.width/2.5,this.y+this.itself.height+20);//"继续游戏"位置
-            app.stage.addChild(this.itself);
-            app.stage.addChild(this.button);
-            this.button.interactive = true;
-            this.button.on('pointertap',()=>{
-                app.stage.removeChild(this.itself);
-                app.stage.removeChild(this.button);
-                for(let i=1;i<=6;i++)//恢复
-                {
-                    for(let j=1;j<=6;j++)
-                    {
-                        let tempTile =gameMap.tileLists.get(`${i},${j}`);
-                        tempTile.itself.interactive=true;
-                    }
-                }
-            });
 
+            this.randomNumble = getRandomInt(1, 5);//调最大值即可实现概率,1到5为出现
+
+            if (this.randomNumble >= 0 && this.randomNumble <= 5) {
+                if (this.randomNumble === 1) {
+                    this.itself = new PIXI.Sprite.from(random.random01);
+                } else if (this.randomNumble === 2) {
+                    this.itself = new PIXI.Sprite.from(random.random02);
+                } else if (this.randomNumble === 3) {
+                    this.itself = new PIXI.Sprite.from(random.random03);
+                } else if (this.randomNumble === 4) {
+                    this.itself = new PIXI.Sprite.from(random.random04);
+                } else {
+                    this.itself = new PIXI.Sprite.from(random.random05);
+                }
+                this.x = farmArea.endPositionX + systemValue.size * 6;
+                this.y = gameMap.startY + systemValue.size * 1;
+                this.itself.position.set(this.x, this.y);//图片位置
+                this.itself.width = 520;
+                this.itself.height = 430;
+                this.button.position.set(this.x + this.itself.width / 2.5, this.y + this.itself.height + 20);//"继续游戏"位置
+                app.stage.addChild(this.itself);
+                app.stage.addChild(this.button);
+                this.button.interactive = true;
+                this.button.on('pointertap', () => {
+                    app.stage.removeChild(this.itself);
+                    app.stage.removeChild(this.button);
+                    for (let i = 1; i <= 6; i++)//恢复
+                    {
+                        for (let j = 1; j <= 6; j++) {
+                            let tempTile = gameMap.tileLists.get(`${i},${j}`);
+                            tempTile.itself.interactive = true;
+                        }
+                    }
+                });
         }
 
         },
     achieve(){
         if(this.randomNumble>=0&&this.randomNumble<=5)
         {
-            if(this.randomNumble===1){//胡萝卜贼
+            if(this.randomNumble===1){//小麦贼
+                for (let i = 1; i <= 6; i++)
+                {
+                    for (let j = 1; j <= 6; j++) {
+                        let tempTile = gameMap.tileLists.get(`${i},${j}`);
+                        if(tempTile.id==='wheat')
+                        {
+                            gameMap.itself.removeChild(tempTile.itself);
+                            gameMap.fallAndCreate(tempTile.x,tempTile.y);
+                        }
+                    }
+                }
 
             }else if(this.randomNumble===2){//动物破坏了他人财物,扣25
                 farmInformation.coinBoard.isDestruction=true;
