@@ -6,6 +6,7 @@ import { shopButtonList } from './shopButtonList';
 import * as sounds from './sounds';
 import * as PIXISound from '@pixi/sound';
 import * as ui from './ui';
+import * as random from './randomEvent'
 /**
  * 整个PIXI应用，所有的元素都应是这个应用的子元素
  * @type {PIXI.Application}
@@ -65,6 +66,8 @@ function tapLoop(tile){
         tile.moveToBar();
         bar.checkMatch();
         gameMap.fallAndCreate(tile.x,tile.y);
+        randomEvent.create();
+        randomEvent.achieve();
         itemRequire.checkSuccesses();
         itemRequire.lastingTimeChanges(1);
         itemRequire.checkFails();
@@ -72,6 +75,7 @@ function tapLoop(tile){
         farmInformation.gameDate.pass();
         itemRequire.spawnRandomRequire();
     });
+
 }
 
 // 以下都是需要的类
@@ -175,6 +179,21 @@ class Tile {
         gameMap.typeNumbers.set(this.id,tempNumber);
         bar.itself.addChild(this.itself);//创建对象到合成槽中
         this.itself.interactive=false;
+        //随机事件 寒潮
+        if(randomEvent.isColdWave>0)
+        {
+            randomEvent.isColdWave-=1;
+        }else
+        {
+            for(let i=1;i<=6;i++)//恢复被冻结的元素
+            {
+                for(let j=1;j<=6;j++)
+                {
+                    let tempTile =gameMap.tileLists.get(`${i},${j}`);
+                    tempTile.itself.interactive=true;
+                }
+            }
+        }
 
     }
 
@@ -628,12 +647,16 @@ let farmInformation ={
      * @property itself PIXI.Text 金币的文本
      * @property create function 创建到画面上
      * @property change function 改变所持的金币值，正数为增负数为减
+     * isDoubleCoin  随机事件动物心情好，下一次需求满足奖励翻倍
+     * isDestructio  随机事件动物破坏财物，扣25
      */
     coinBoard : {
         startX : 10,
         startY : 10,
         itself : new PIXI.Text(),
         coin : 50,
+        isDoubleCoin: false,
+        isDestruction: false,
         create(){
             this.itself.position.set(this.startX,this.startY);
             farmInformation.itself.addChild(this.itself);
@@ -642,7 +665,17 @@ let farmInformation ={
         change(value){
             console.log(value);
             console.log(this.coin)
-            this.coin += value;
+            if(this.isDoubleCoin===true){
+                this.coin+=value*2;
+                this.isDoubleCoin=false;
+            }else {
+                this.coin += value;
+            }
+            if(this.isDestruction===true){
+                this.coin-=25;
+                this.isDestruction=false;
+            }
+
             this.itself.text = `金币：${this.coin}`;
         }
     },
@@ -819,19 +852,19 @@ let shopArea={
 /**
  * 实现动画效果
  */
-function getMove(a,callback){//传入参数为具体的方格，在合成槽放的第几个位置
+function getMove(a, callback) {//传入参数为具体的方格，在合成槽放的第几个位置
     soundSystem.clickMusic();
     let isAddedBefore = false;
-    let endatat=0;//记录在合成槽的第几个放元素
-    for(let i=1;i<=bar.lengthNow;i++){
-        if(bar.tileLists.get(i).id ===a.id ){
+    let endatat = 0;//记录在合成槽的第几个放元素
+    for (let i = 1; i <= bar.lengthNow; i++) {
+        if (bar.tileLists.get(i).id === a.id) {
             isAddedBefore = true;
-            endatat=i+1;
+            endatat = i + 1;
             break;
         }
     }
-    if(!isAddedBefore){
-        endatat=bar.lengthNow+1;
+    if (!isAddedBefore) {
+        endatat = bar.lengthNow + 1;
     }
     let endx=(endatat-1)*48-24;//合成槽在方格的对应坐标
     let endy=312;//同上,312
@@ -850,10 +883,10 @@ function getMove(a,callback){//传入参数为具体的方格，在合成槽放�
                 walkx = Math.floor(walkx);
             }
             var walky = (endy - ay) / 3;
-            if (walky> 0) {
+            if (walky > 0) {
                 walky = Math.ceil(walky);
             } else {
-                walky= Math.floor(walky);
+                walky = Math.floor(walky);
             }
             a.itself.zIndex=10;
             a.itself.position.set(ax+walkx,ay+walky);
@@ -862,8 +895,11 @@ function getMove(a,callback){//传入参数为具体的方格，在合成槽放�
             ay+=walky;
         }
 
-    },20)
+    }, 20)
 }
+/**
+ * 背景音乐
+ */
 let soundSystem={
     init(){
         PIXISound.sound.add('click',sounds.soundTapTile);
@@ -951,5 +987,104 @@ function getRandomInt(min, max) {
     return rand1;
 }
 
+
+/**
+ * 随机事件
+ * *create() 显示随机事件
+ * achieve() 实现随机事件的效果
+ * randomNumber  记录要显示随机事件的序号 也可以控制出现的概率
+ * button 继续游戏
+ * isColdWave 随机事件  寒潮  默认冻结 5 回合
+ */
+
+let randomEvent={
+    button: new PIXI.Text('继续游戏'),
+    isColdWave: 0,
+    create(){
+        for(let i=1;i<=6;i++)//在随机事件图片出现时不能点击地图
+        {
+            for(let j=1;j<=6;j++)
+            {
+                let tempTile =gameMap.tileLists.get(`${i},${j}`);
+                tempTile.itself.interactive=false;
+            }
+        }
+
+            this.randomNumble = getRandomInt(1, 5);//调最大值即可实现概率,1到5为出现
+
+            if (this.randomNumble >= 0 && this.randomNumble <= 5) {
+                if (this.randomNumble === 1) {
+                    this.itself = new PIXI.Sprite.from(random.random01);
+                } else if (this.randomNumble === 2) {
+                    this.itself = new PIXI.Sprite.from(random.random02);
+                } else if (this.randomNumble === 3) {
+                    this.itself = new PIXI.Sprite.from(random.random03);
+                } else if (this.randomNumble === 4) {
+                    this.itself = new PIXI.Sprite.from(random.random04);
+                } else {
+                    this.itself = new PIXI.Sprite.from(random.random05);
+                }
+                this.x = farmArea.endPositionX + systemValue.size * 6;
+                this.y = gameMap.startY + systemValue.size * 1;
+                this.itself.position.set(this.x, this.y);//图片位置
+                this.itself.width = 520;
+                this.itself.height = 430;
+                this.button.position.set(this.x + this.itself.width / 2.5, this.y + this.itself.height + 20);//"继续游戏"位置
+                app.stage.addChild(this.itself);
+                app.stage.addChild(this.button);
+                this.button.interactive = true;
+                this.button.on('pointertap', () => {
+                    app.stage.removeChild(this.itself);
+                    app.stage.removeChild(this.button);
+                    for (let i = 1; i <= 6; i++)//恢复
+                    {
+                        for (let j = 1; j <= 6; j++) {
+                            let tempTile = gameMap.tileLists.get(`${i},${j}`);
+                            tempTile.itself.interactive = true;
+                        }
+                    }
+                });
+        }
+
+        },
+    achieve(){
+        if(this.randomNumble>=0&&this.randomNumble<=5)
+        {
+            if(this.randomNumble===1){//小麦贼
+                for (let i = 1; i <= 6; i++)
+                {
+                    for (let j = 1; j <= 6; j++) {
+                        let tempTile = gameMap.tileLists.get(`${i},${j}`);
+                        if(tempTile.id==='wheat')
+                        {
+                            gameMap.itself.removeChild(tempTile.itself);
+                            gameMap.fallAndCreate(tempTile.x,tempTile.y);
+                        }
+                    }
+                }
+
+            }else if(this.randomNumble===2){//动物破坏了他人财物,扣25
+                farmInformation.coinBoard.isDestruction=true;
+
+            }else if(this.randomNumble===3){//寒潮  冻结 5 回合
+                this.isColdWave=5;
+                    for(let j=0;j<18;j++)//开始冻结,这个j控制最多冻结多少个  现在默认最多冻结一半 就是18个 因为随机数会重复
+                    {
+                        let x=getRandomInt(1,6);
+                        let y=getRandomInt(1,6);
+                        let tempTile =gameMap.tileLists.get(`${x},${y}`);
+                        tempTile.itself.interactive=false;
+                    }
+
+            }else if(this.randomNumble===4){//动物心情好,下一次需求奖励的钱翻倍
+                farmInformation.coinBoard.isDoubleCoin=true;
+            }else {//收购商请喝茶
+
+            }
+        }
+    }
+
+
+}
 export {createApp,};
 
