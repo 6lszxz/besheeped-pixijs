@@ -879,7 +879,6 @@ let soundSystem={
         let BGMrandom=['BGM1','BGM2','BGM3','BGM4','BGM5','BGM6','BGM7'];
         let i=getRandomInt(0,6);
         PIXISound.sound.play(BGMrandom[i],soundSystem.BGM);
-
     },
     clickMusic(){
         PIXISound.sound.play('click');
@@ -890,8 +889,12 @@ let RuleArea={
     itself: new PIXI.Sprite.from(ui.ruleImg),
     button: new PIXI.Text('开始吧！'),
     create(){
-        this.itself.position.set(window.innerWidth/16, window.innerHeight/16);
-        this.button.position.set(window.innerWidth/2,window.innerHeight*15/16);
+	this.itself.scale.x *= 1.5;
+        this.itself.scale.y *= 1.5;
+        this.itself.position.set(0, 0);
+	this.button.scale.x *= 2;
+        this.button.scale.y *= 2;
+        this.button.position.set(window.innerWidth+150, 600);
         app.stage.addChild(this.itself);
         app.stage.addChild(this.button);
         this.button.interactive = true;
@@ -906,7 +909,7 @@ let RuleArea={
 let initArea={
     logo : {
         itself : new PIXI.Sprite.from(ui.logoImg),
-        positionX : window.innerWidth/2 - 518/2*systemValue.scaleX,
+	positionX : (window.innerWidth+518/4)/2,
         positionY : window.innerHeight/3,
         create(){
             this.itself.position.set(this.positionX, this.positionY);
@@ -918,7 +921,7 @@ let initArea={
     },
     button : {
         itself : new PIXI.Text('开始游戏'),
-        positionX : window.innerWidth/2,
+	positionX : ((window.innerWidth+518/4)/2)*5/4,
         positionY : window.innerHeight*2/3,
         create(){
             this.itself.position.set(this.positionX, this.positionY);
