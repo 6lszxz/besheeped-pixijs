@@ -427,22 +427,10 @@ class shopButton{
         for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
             let buttonNow = shopButtonList[i];
             shopButton.create(buttonNow,i);
+	    shopButton.checkCanBeBought(buttonNow);
         }
     }
     static create(buttonNow,i){
-        if(buttonNow.isBought == true){
-            buttonNow.itself = new PIXI.Sprite.from(ui.shopButtonImg);
-            buttonNow.itself.zIndex =10;
-            buttonNow.itself.position.set(0,systemValue.toMapY(i%5===0?i%5+1:i%5*2+1));
-            shopArea.itself.addChild(buttonNow.itself);
-            buttonNow.titleText = new PIXI.Text(`${buttonNow.name}\n 已购买`);
-            buttonNow.titleText.position.set(10,0);
-            buttonNow.titleText.zIndex =15;
-            buttonNow.itself.addChild(buttonNow.titleText);
-        }
-        else {
-            buttonNow.isBought = false;
-            buttonNow.canBeBought = false;
             buttonNow.itself = new PIXI.Sprite.from(ui.shopButtonImg);
             buttonNow.itself.zIndex = 10;
             buttonNow.itself.position.set(0, systemValue.toMapY(i % 5 === 0 ? i % 5 + 1 : i % 5 * 2 + 1));
@@ -462,7 +450,6 @@ class shopButton{
                     shopButton.checkCanBeBoughtAll();
                 }
             });
-        }
     }
     static delete(buttonNow){
         shopArea.itself.removeChild(buttonNow.itself);
