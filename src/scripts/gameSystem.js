@@ -51,7 +51,7 @@ function init(){
     gameMap.shuffleAll();
     structureSystem.createToMap('sheep');
     shopButton.createPage(1);
-    //shopButton.createTurnPageButton();
+    shopButton.createTurnPageButton();
     app.stage.addChild(version);
     soundSystem.BGM();
 }
