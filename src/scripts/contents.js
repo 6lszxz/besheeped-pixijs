@@ -17,10 +17,15 @@ import milk from '../assets/contents/milk.png'
 import largeEgg from '../assets/contents/largeEgg.png'
 import mayonnaise from '../assets/contents/mayonnaise.png'
 import cloth from '../assets/contents/cloth.png'
-
+import truffle from '../assets/contents/truffle.png'
+import oil from '../assets/contents/oil.png'
+import honey from '../assets/contents/honey.png'
+import flower from '../assets/contents/flower.png'
+import ring from '../assets/contents/ring.png'
 export {
     corn, wheat, fiber, radish, strawberry,
     torch, wool, wood, sardine, shears,
     wateringCan, apple, clam, redMushroom, smile,
-    milk, largeEgg, mayonnaise, cloth, 
+    milk, largeEgg, mayonnaise, cloth, oil,truffle,
+    flower,honey,ring,
 }
