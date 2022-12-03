@@ -427,22 +427,10 @@ class shopButton{
         for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
             let buttonNow = shopButtonList[i];
             shopButton.create(buttonNow,i);
+            shopButton.checkCanBeBought(buttonNow);
         }
     }
     static create(buttonNow,i){
-        if(buttonNow.isBought == true){
-            buttonNow.itself = new PIXI.Sprite.from(ui.shopButtonImg);
-            buttonNow.itself.zIndex =10;
-            buttonNow.itself.position.set(0,systemValue.toMapY(i%5===0?i%5+1:i%5*2+1));
-            shopArea.itself.addChild(buttonNow.itself);
-            buttonNow.titleText = new PIXI.Text(`${buttonNow.name}\n 已购买`);
-            buttonNow.titleText.position.set(10,0);
-            buttonNow.titleText.zIndex =15;
-            buttonNow.itself.addChild(buttonNow.titleText);
-        }
-        else {
-            buttonNow.isBought = false;
-            buttonNow.canBeBought = false;
             buttonNow.itself = new PIXI.Sprite.from(ui.shopButtonImg);
             buttonNow.itself.zIndex = 10;
             buttonNow.itself.position.set(0, systemValue.toMapY(i % 5 === 0 ? i % 5 + 1 : i % 5 * 2 + 1));
@@ -462,7 +450,6 @@ class shopButton{
                     shopButton.checkCanBeBoughtAll();
                 }
             });
-        }
     }
     static delete(buttonNow){
         shopArea.itself.removeChild(buttonNow.itself);
@@ -1000,53 +987,49 @@ function getRandomInt(min, max) {
 let randomEvent={
     button: new PIXI.Text('继续游戏'),
     isColdWave: 0,
-    create(){
-        for(let i=1;i<=6;i++)//在随机事件图片出现时不能点击地图
-        {
-            for(let j=1;j<=6;j++)
-            {
-                let tempTile =gameMap.tileLists.get(`${i},${j}`);
-                tempTile.itself.interactive=false;
-            }
-        }
-
-            this.randomNumble = getRandomInt(1, 5);//调最大值即可实现概率,1到5为出现
-
-            if (this.randomNumble >= 0 && this.randomNumble <= 5) {
-                if (this.randomNumble === 1) {
-                    this.itself = new PIXI.Sprite.from(random.random01);
-                } else if (this.randomNumble === 2) {
-                    this.itself = new PIXI.Sprite.from(random.random02);
-                } else if (this.randomNumble === 3) {
-                    this.itself = new PIXI.Sprite.from(random.random03);
-                } else if (this.randomNumble === 4) {
-                    this.itself = new PIXI.Sprite.from(random.random04);
-                } else {
-                    this.itself = new PIXI.Sprite.from(random.random05);
+    create() {
+        this.randomNumble = getRandomInt(1, 100);//调最大值即可实现概率,1到5为出现
+        if (this.randomNumble >= 0 && this.randomNumble <= 5) {
+            //在随机事件图片出现时不能点击地图
+            for (let i = 1; i <= 6; i++) {
+                for (let j = 1; j <= 6; j++) {
+                    let tempTile = gameMap.tileLists.get(`${i},${j}`);
+                    tempTile.itself.interactive = false;
                 }
-                this.x = farmArea.endPositionX + systemValue.size * 6;
-                this.y = gameMap.startY + systemValue.size * 1;
-                this.itself.position.set(this.x, this.y);//图片位置
-                this.itself.width = 520;
-                this.itself.height = 430;
-                this.button.position.set(this.x + this.itself.width / 2.5, this.y + this.itself.height + 20);//"继续游戏"位置
-                app.stage.addChild(this.itself);
-                app.stage.addChild(this.button);
-                this.button.interactive = true;
-                this.button.on('pointertap', () => {
-                    app.stage.removeChild(this.itself);
-                    app.stage.removeChild(this.button);
-                    for (let i = 1; i <= 6; i++)//恢复
-                    {
-                        for (let j = 1; j <= 6; j++) {
-                            let tempTile = gameMap.tileLists.get(`${i},${j}`);
-                            tempTile.itself.interactive = true;
-                        }
+            }
+            if (this.randomNumble === 1) {
+                this.itself = new PIXI.Sprite.from(random.random01);
+            } else if (this.randomNumble === 2) {
+                this.itself = new PIXI.Sprite.from(random.random02);
+            } else if (this.randomNumble === 3) {
+                this.itself = new PIXI.Sprite.from(random.random03);
+            } else if (this.randomNumble === 4) {
+                this.itself = new PIXI.Sprite.from(random.random04);
+            } else {
+                this.itself = new PIXI.Sprite.from(random.random05);
+            }
+            this.x = farmArea.endPositionX + systemValue.size * 6;
+            this.y = gameMap.startY + systemValue.size * 1;
+            this.itself.position.set(this.x, this.y);//图片位置
+            this.itself.width = 520;
+            this.itself.height = 430;
+            this.button.position.set(this.x + this.itself.width / 2.5, this.y + this.itself.height + 20);//"继续游戏"位置
+            app.stage.addChild(this.itself);
+            app.stage.addChild(this.button);
+            this.button.interactive = true;
+            this.button.on('pointertap', () => {
+                app.stage.removeChild(this.itself);
+                app.stage.removeChild(this.button);
+                for (let i = 1; i <= 6; i++)//恢复
+                {
+                    for (let j = 1; j <= 6; j++) {
+                        let tempTile = gameMap.tileLists.get(`${i},${j}`);
+                        tempTile.itself.interactive = true;
                     }
-                });
+                }
+            });
         }
-
-        },
+    },
     achieve(){
         if(this.randomNumble>=0&&this.randomNumble<=5)
         {
@@ -1083,8 +1066,6 @@ let randomEvent={
             }
         }
     }
-
-
 }
 export {createApp,};
 

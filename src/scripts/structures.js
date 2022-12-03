@@ -1,4 +1,4 @@
-import sheep from '../assets/structures/Sheep.png'
+import sheep from '../assets/structures/sheep.png'
 import cow from '../assets/structures/cow.png'
 import chicken from '../assets/structures/chicken.png'
 import pig from '../assets/structures/pig.png'
