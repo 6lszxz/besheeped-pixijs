@@ -62,6 +62,7 @@ function init(){
  * @param tile {Tile}
  */
 function tapLoop(tile){
+    if(tile.isFrozen) return;//已冰冻
     getMove(tile,function (){
         tile.moveToBar();
         bar.checkMatch();
@@ -75,7 +76,15 @@ function tapLoop(tile){
         farmInformation.gameDate.pass();
         itemRequire.spawnRandomRequire();
     });
+}
 
+
+function clearTile(tile){
+    if(tile.isFrozen) return; //已冰冻
+    getMove(tile,function (){
+        tile.clearCur();
+       gameMap.fallAndCreate(tile.x,tile.y);
+   });
 }
 
 // 以下都是需要的类
@@ -144,11 +153,15 @@ class Tile {
         gameMap.tileLists.set(`${this.x},${this.y}`,this);
         this.itself.on('pointertap', ()=>{
             tapLoop(this);
+	    // this.frozen(2,true);//冻结第一行
+            // this.clearTiles(2,true);//消除第一行
+            // this.clearTypeTile("apple");//消除apple种类
         });
         let lastNumber = gameMap.typeNumbers.get(this.id);
         lastNumber++;
         gameMap.typeNumbers.set(this.id,lastNumber);
         gameMap.itself.addChild(this.itself);//创建
+	this.isFrozen = false;    
     }
     /**
      * 把当前块传入到合成槽中
@@ -197,8 +210,34 @@ class Tile {
 
     }
 
+	
+    clearCur(){
+        let isAddedBefore = false;
+        for(let i=1;i<=bar.lengthNow;i++){
+            if(bar.tileLists.get(i).id ===this.id ){
+                isAddedBefore = true;
+                for(let j=bar.lengthNow+1;j>i+1;j--){
+                    bar.tileLists.set(j,bar.tileLists.get(j-1));
+                }
+                bar.tileLists.set(i+1,this);
+                break;
+            }
+        }
+        if(!isAddedBefore){
+            bar.tileLists.set(bar.lengthNow+1,this);
+        }
+        bar.lengthNow++;
+        bar.refresh();
+        let lastNumber = bar.typeNumbers.get(this.id);
+        lastNumber++;
+        bar.typeNumbers.set(this.id,lastNumber);
+        let tempNumber = gameMap.typeNumbers.get(this.id);
+        tempNumber--;
+        gameMap.typeNumbers.set(this.id,tempNumber);
+        this.itself.interactive=false;
+    }	
 
-
+	
     /**
      * 把当前块从合成槽中移除
      */
@@ -218,6 +257,67 @@ class Tile {
         bar.typeNumbers.set(id,tempNumber);
     }
 }
+
+
+     /**
+     * 冰冻某行或者某列元素
+     * frozen(1,true); 冻结第一行
+     * frozen(1); 冻结第一列
+     */
+    frozen(index,type){
+        if(type){//行
+            for(let i = 1; i < 7; i++){
+                let v = gameMap.tileLists.get(i+","+index);
+                v.isFrozen = true;
+            }
+        }else{//列
+            for(let i = 1; i < 7; i++){
+                let v = gameMap.tileLists.get(index+","+i);
+                v.isFrozen = true;
+            }
+        }
+    }
+
+    /**
+     * 消除一行或者一列 index 索引,type 选择行列
+     * clearTile(2,true); 消除第二行
+     * clearTile(2); //消除第二列
+     */
+    clearTiles(index,type){
+        if(type){//行
+            for(let i = 1; i < 7; i++){
+                let v = gameMap.tileLists.get(i+","+index);
+                clearTile(v);
+                // gameMap.fallAndCreate(v.x,v.y);
+            }
+        }else{//列
+            for(let i = 1; i < 7; i++){
+                let v = gameMap.tileLists.get(index+","+i);
+                clearTile(v);
+            }
+        }
+    }
+
+
+    
+    /**
+     * 消除屏幕上特定种类的所有元素 type类型
+     * clearTypeTile("apple"); 消除苹果种类
+     */
+    clearTypeTile(type){
+        console.log(gameMap.tileLists);
+        gameMap.tileLists.forEach((t)=>{
+            if(t.id == type){
+                console.log(t);
+                clearTile(t);
+            }
+        });
+    }
+}
+
+
+
+
 /**
  * 结构体系统类，该类中全是静态方法，因为具体的结构实例可以在structueList中自定义
  */
