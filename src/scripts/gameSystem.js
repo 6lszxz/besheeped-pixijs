@@ -67,14 +67,15 @@ function tapLoop(tile){
         tile.moveToBar();
         bar.checkMatch();
         gameMap.fallAndCreate(tile.x,tile.y);
-        randomEvent.create();
-        randomEvent.achieve();
         itemRequire.checkSuccesses();
         itemRequire.lastingTimeChanges(1);
         itemRequire.checkFails();
         farmInformation.gameDate.pass();
         itemRequire.spawnRandomRequire();
         shopButton.checkCanBeBoughtAll();
+        randomEvent.create();
+        randomEvent.achieve();
+        bar.refresh();
     });
 }
 
@@ -82,7 +83,9 @@ function tapLoop(tile){
 function clearTile(tile){
     if(tile.isFrozen) return; //已冰冻
     getMove(tile,function (){
-        tile.clearCur();
+        tile.moveToBar();
+        tile.removeFromBar();
+        bar.refresh();
        gameMap.fallAndCreate(tile.x,tile.y);
    });
 }
@@ -131,7 +134,7 @@ class Tile {
         if(id==='random'){
             do{
                 this.id = Tile.types[Math.floor(Math.random()*(Tile.types.length))];
-            }while(gameMap.checkId(this.id) || !Tile.typesNow.has(this.id));
+            }while( !Tile.typesNow.has(this.id));
         }else {
             this.id = id;
         }
@@ -153,7 +156,7 @@ class Tile {
         gameMap.tileLists.set(`${this.x},${this.y}`,this);
         this.itself.on('pointertap', ()=>{
             tapLoop(this);
-	    // this.frozen(2,true);//冻结第一行
+            // this.frozen(2,true);//冻结第一行
             // this.clearTiles(2,true);//消除第一行
             // this.clearTypeTile("apple");//消除apple种类
         });
@@ -161,7 +164,7 @@ class Tile {
         lastNumber++;
         gameMap.typeNumbers.set(this.id,lastNumber);
         gameMap.itself.addChild(this.itself);//创建
-	this.isFrozen = false;    
+        this.isFrozen = false;
     }
     /**
      * 把当前块传入到合成槽中
@@ -192,52 +195,7 @@ class Tile {
         gameMap.typeNumbers.set(this.id,tempNumber);
         bar.itself.addChild(this.itself);//创建对象到合成槽中
         this.itself.interactive=false;
-        //随机事件 寒潮
-        if(randomEvent.isColdWave>0)
-        {
-            randomEvent.isColdWave-=1;
-        }else
-        {
-            for(let i=1;i<=6;i++)//恢复被冻结的元素
-            {
-                for(let j=1;j<=6;j++)
-                {
-                    let tempTile =gameMap.tileLists.get(`${i},${j}`);
-                    tempTile.itself.interactive=true;
-                }
-            }
-        }
-
     }
-
-	
-    clearCur(){
-        let isAddedBefore = false;
-        for(let i=1;i<=bar.lengthNow;i++){
-            if(bar.tileLists.get(i).id ===this.id ){
-                isAddedBefore = true;
-                for(let j=bar.lengthNow+1;j>i+1;j--){
-                    bar.tileLists.set(j,bar.tileLists.get(j-1));
-                }
-                bar.tileLists.set(i+1,this);
-                break;
-            }
-        }
-        if(!isAddedBefore){
-            bar.tileLists.set(bar.lengthNow+1,this);
-        }
-        bar.lengthNow++;
-        bar.refresh();
-        let lastNumber = bar.typeNumbers.get(this.id);
-        lastNumber++;
-        bar.typeNumbers.set(this.id,lastNumber);
-        let tempNumber = gameMap.typeNumbers.get(this.id);
-        tempNumber--;
-        gameMap.typeNumbers.set(this.id,tempNumber);
-        this.itself.interactive=false;
-    }	
-
-	
     /**
      * 把当前块从合成槽中移除
      */
@@ -256,15 +214,12 @@ class Tile {
         tempNumber--;
         bar.typeNumbers.set(id,tempNumber);
     }
-}
-
-
      /**
      * 冰冻某行或者某列元素
      * frozen(1,true); 冻结第一行
      * frozen(1); 冻结第一列
      */
-    frozen(index,type){
+    static frozen(index,type){
         if(type){//行
             for(let i = 1; i < 7; i++){
                 let v = gameMap.tileLists.get(i+","+index);
@@ -277,13 +232,12 @@ class Tile {
             }
         }
     }
-
     /**
      * 消除一行或者一列 index 索引,type 选择行列
      * clearTile(2,true); 消除第二行
      * clearTile(2); //消除第二列
      */
-    clearTiles(index,type){
+    static clearTiles(index,type){
         if(type){//行
             for(let i = 1; i < 7; i++){
                 let v = gameMap.tileLists.get(i+","+index);
@@ -297,26 +251,20 @@ class Tile {
             }
         }
     }
-
-
-    
     /**
      * 消除屏幕上特定种类的所有元素 type类型
      * clearTypeTile("apple"); 消除苹果种类
      */
-    clearTypeTile(type){
+    static clearTypeTile(type){
         console.log(gameMap.tileLists);
         gameMap.tileLists.forEach((t)=>{
-            if(t.id == type){
+            if(t.id === type){
                 console.log(t);
                 clearTile(t);
             }
         });
     }
 }
-
-
-
 
 /**
  * 结构体系统类，该类中全是静态方法，因为具体的结构实例可以在structueList中自定义
@@ -536,7 +484,7 @@ class shopButton{
             buttonNow.itself.zIndex = 10;
             buttonNow.itself.position.set(0, systemValue.toMapY(i % 5 === 0 ? i % 5 + 1 : i % 5 * 2 + 1));
             shopArea.itself.addChild(buttonNow.itself);
-            buttonNow.titleText = new PIXI.Text(`${switchJSONToName(buttonNow.name)}\n 花费：${buttonNow.cost}，现在没钱`);
+            buttonNow.titleText = new PIXI.Text(`${buttonNow.zhName}\n 花费：${buttonNow.cost}，现在没钱`);
             buttonNow.titleText.position.set(0.5, 0);
             buttonNow.titleText.zIndex = 15;
             buttonNow.itself.addChild(buttonNow.titleText);
@@ -546,7 +494,7 @@ class shopButton{
                         structureSystem.createToMap(buttonNow.name);
                     }
                     farmInformation.coinBoard.change(-(buttonNow.cost));
-                    buttonNow.titleText.text = `${switchJSONToName(buttonNow.name)}\n 已购买`
+                    buttonNow.titleText.text = `${buttonNow.zhName}\n 已购买`
                     buttonNow.isBought = true;
                     shopButton.checkCanBeBoughtAll();
                 }
@@ -628,7 +576,7 @@ class shopButton{
     }
     static checkCanBeBought(buttonNow){
         if(buttonNow.isBought){
-            buttonNow.titleText.text= `${switchJSONToName(buttonNow.name)}\n 已购买`
+            buttonNow.titleText.text= `${(buttonNow.zhName)}\n 已购买`
             return;
         }
         if(farmInformation.coinBoard.coin<buttonNow.cost && !buttonNow.isBought){
@@ -637,7 +585,7 @@ class shopButton{
             return;
         }
         if(farmInformation.coinBoard.coin>=buttonNow.cost && (!buttonNow.isBought)){
-            buttonNow.titleText.text= `${switchJSONToName(buttonNow.name)}\n 花费：${buttonNow.cost}，点击购买`
+            buttonNow.titleText.text= `${buttonNow.zhName}\n 花费：${buttonNow.cost}，点击购买`
             buttonNow.canBeBought = true;
             buttonNow.itself.interactive = true;
         }
@@ -845,9 +793,6 @@ let gameMap={
             }
         }
     },
-    checkId(id){
-        return gameMap.typeNumbers.get(id)>=3;
-    }
 }
 /**
  * 合成槽
@@ -1077,46 +1022,6 @@ function getRandomInt(min, max) {
     return rand1;
 }
 
-function switchJSONToName(value){
-    switch (value){
-        case 'cow':
-            return '奶牛';
-        case 'chicken':
-            return '小鸡';
-        case 'mayonnaiseMachine':
-            return '蛋黄酱机';
-        case 'loom':
-            return '织布机';
-        case 'rabbit':
-            return '兔子';
-        case 'smileEggPress':
-            return '史莱姆压蛋器';
-        case 'pig':
-            return 'GGBond';
-        case 'oilMaker':
-            return '产油机';
-        case 'horse':
-            return '马';
-        case 'beeHouse':
-            return '蜂房';
-        case 'bear':
-            return '玩具熊';
-        case 'dinosaur':
-            return '恐龙';
-        case 'ostrich':
-            return '鸵鸟';
-        case 'wolf':
-            return '狼';
-        case 'fox':
-            return  '狐狸';
-        case 'ikun':
-            return  '小黑子';
-        case 'kunkun':
-            return '坤哥';
-
-    }
-}
-
 /**
  * 随机事件
  * *create() 显示随机事件
@@ -1130,7 +1035,7 @@ let randomEvent={
     button: new PIXI.Text('继续游戏'),
     isColdWave: 0,
     create() {
-        this.randomNumble = getRandomInt(1, 100);//调最大值即可实现概率,1到5为出现
+        this.randomNumble = getRandomInt(Infinity, Infinity);//调最大值即可实现概率,1到5为出现
         if (this.randomNumble >= 0 && this.randomNumble <= 5) {
             //在随机事件图片出现时不能点击地图
             for (let i = 1; i <= 6; i++) {
@@ -1139,17 +1044,7 @@ let randomEvent={
                     tempTile.itself.interactive = false;
                 }
             }
-            if (this.randomNumble === 1) {
-                this.itself = new PIXI.Sprite.from(random.random01);
-            } else if (this.randomNumble === 2) {
-                this.itself = new PIXI.Sprite.from(random.random02);
-            } else if (this.randomNumble === 3) {
-                this.itself = new PIXI.Sprite.from(random.random03);
-            } else if (this.randomNumble === 4) {
-                this.itself = new PIXI.Sprite.from(random.random04);
-            } else {
-                this.itself = new PIXI.Sprite.from(random.random05);
-            }
+            this.itself = new PIXI.Sprite.from(random[`random0${this.randomNumble}`]);
             this.x = farmArea.endPositionX + systemValue.size * 6;
             this.y = gameMap.startY + systemValue.size * 1;
             this.itself.position.set(this.x, this.y);//图片位置
@@ -1176,33 +1071,14 @@ let randomEvent={
         if(this.randomNumble>=0&&this.randomNumble<=5)
         {
             if(this.randomNumble===1){//小麦贼
-                for (let i = 1; i <= 6; i++)
-                {
-                    for (let j = 1; j <= 6; j++) {
-                        let tempTile = gameMap.tileLists.get(`${i},${j}`);
-                        if(tempTile.id==='wheat')
-                        {
-                            gameMap.itself.removeChild(tempTile.itself);
-                            gameMap.fallAndCreate(tempTile.x,tempTile.y);
-                        }
-                    }
-                }
-
+                Tile.clearTypeTile('wool');
             }else if(this.randomNumble===2){//动物破坏了他人财物,扣25
                 farmInformation.coinBoard.isDestruction=true;
-
             }else if(this.randomNumble===3){//寒潮  冻结 5 回合
-                this.isColdWave=5;
-                    for(let j=0;j<18;j++)//开始冻结,这个j控制最多冻结多少个  现在默认最多冻结一半 就是18个 因为随机数会重复
-                    {
-                        let x=getRandomInt(1,6);
-                        let y=getRandomInt(1,6);
-                        let tempTile =gameMap.tileLists.get(`${x},${y}`);
-                        tempTile.itself.interactive=false;
-                    }
 
             }else if(this.randomNumble===4){//动物心情好,下一次需求奖励的钱翻倍
                 farmInformation.coinBoard.isDoubleCoin=true;
+
             }else {//收购商请喝茶
 
             }
