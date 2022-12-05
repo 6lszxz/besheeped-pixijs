@@ -16,7 +16,7 @@ const app = new PIXI.Application({
 });
 
 // 版本号
-let versionNumber='alpha 1.2.0\npowered by 6lszxz, Xingxinyuxxy, qxr001, lzj26 and lwnzzz';
+let versionNumber='beta 1.1.1\npowered by 6lszxz, Xingxinyuxxy, qxr001, lzj26 and lwnzzz';
 
 // 以下都是系统流程中调用的函数
 /**
@@ -71,9 +71,9 @@ function tapLoop(tile){
         itemRequire.checkSuccesses();
         itemRequire.lastingTimeChanges(1);
         itemRequire.checkFails();
-        shopButton.checkCanBeBoughtAll();
         farmInformation.gameDate.pass();
         itemRequire.spawnRandomRequire();
+        shopButton.checkCanBeBoughtAll();
     });
 
 }
@@ -371,6 +371,7 @@ class itemRequire{
             let structure = structureSystem.getStructureById(this.from);
             structure.onRequiringNow = false;
             farmInformation.coinBoard.change(this.earning);
+            systemValue.score+=this.earning;
             farmArea.itself.removeChild(this.itself);
             itemRequire.requiringNow.delete(this);
         }
@@ -435,7 +436,7 @@ class shopButton{
             buttonNow.itself.zIndex = 10;
             buttonNow.itself.position.set(0, systemValue.toMapY(i % 5 === 0 ? i % 5 + 1 : i % 5 * 2 + 1));
             shopArea.itself.addChild(buttonNow.itself);
-            buttonNow.titleText = new PIXI.Text(`${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`);
+            buttonNow.titleText = new PIXI.Text(`${switchJSONToName(buttonNow.name)}\n 花费：${buttonNow.cost}，现在没钱`);
             buttonNow.titleText.position.set(0.5, 0);
             buttonNow.titleText.zIndex = 15;
             buttonNow.itself.addChild(buttonNow.titleText);
@@ -445,7 +446,7 @@ class shopButton{
                         structureSystem.createToMap(buttonNow.name);
                     }
                     farmInformation.coinBoard.change(-(buttonNow.cost));
-                    buttonNow.titleText.text = `${buttonNow.name}\n 已购买`
+                    buttonNow.titleText.text = `${switchJSONToName(buttonNow.name)}\n 已购买`
                     buttonNow.isBought = true;
                     shopButton.checkCanBeBoughtAll();
                 }
@@ -527,16 +528,16 @@ class shopButton{
     }
     static checkCanBeBought(buttonNow){
         if(buttonNow.isBought){
-            buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
+            buttonNow.titleText.text= `${switchJSONToName(buttonNow.name)}\n 已购买`
             return;
         }
         if(farmInformation.coinBoard.coin<buttonNow.cost && !buttonNow.isBought){
-            buttonNow.titleText.text= `${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`
+            //buttonNow.titleText.text= `${switchJSONToName(buttonNow.name)}\n 花费：${buttonNow.cost}，现在没钱`
             buttonNow.canBeBought = false;
             return;
         }
         if(farmInformation.coinBoard.coin>=buttonNow.cost && (!buttonNow.isBought)){
-            buttonNow.titleText.text= `${buttonNow.name}\n 花费：${buttonNow.cost}，点击购买`
+            buttonNow.titleText.text= `${switchJSONToName(buttonNow.name)}\n 花费：${buttonNow.cost}，点击购买`
             buttonNow.canBeBought = true;
             buttonNow.itself.interactive = true;
         }
@@ -569,6 +570,7 @@ let systemValue={
     toMapY(y){
         return (y-1)*systemValue.size;
     },
+    score: 0,
 }
 
 /**
@@ -791,6 +793,7 @@ let bar={
         for(let i=0;i<Tile.types.length;i++){
             let tempNumber = bar.typeNumbers.get(Tile.types[i]);
             if(tempNumber>=3){
+                systemValue.score +=100;
                 while(tempNumber!==0){
                     for(let tile of bar.tileLists.values()){
                         if(tile.id ===Tile.types[i]){
@@ -974,6 +977,45 @@ function getRandomInt(min, max) {
     return rand1;
 }
 
+function switchJSONToName(value){
+    switch (value){
+        case 'cow':
+            return '奶牛';
+        case 'chicken':
+            return '小鸡';
+        case 'mayonnaiseMachine':
+            return '蛋黄酱机';
+        case 'loom':
+            return '织布机';
+        case 'rabbit':
+            return '兔子';
+        case 'smileEggPress':
+            return '史莱姆压蛋器';
+        case 'pig':
+            return 'GGBond';
+        case 'oilMaker':
+            return '产油机';
+        case 'horse':
+            return '马';
+        case 'beeHouse':
+            return '蜂房';
+        case 'bear':
+            return '玩具熊';
+        case 'dinosaur':
+            return '恐龙';
+        case 'ostrich':
+            return '鸵鸟';
+        case 'wolf':
+            return '狼';
+        case 'fox':
+            return  '狐狸';
+        case 'ikun':
+            return  '小黑子';
+        case 'kunkun':
+            return '坤哥';
+
+    }
+}
 
 /**
  * 随机事件

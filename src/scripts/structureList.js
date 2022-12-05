@@ -37,7 +37,7 @@ let structureList=[
     {
         id : "rabbit",
         requiring : "radish",
-        earning : 100,
+        earning : 60,
         startX : 7,
         startY : 2,
         willAddContent : false,
@@ -46,7 +46,7 @@ let structureList=[
     {
         id : "pig",
         requiring : "apple",
-        earning : 200,
+        earning : 80,
         startX : 9,
         startY : 2,
         willAddContent : true,
@@ -56,7 +56,7 @@ let structureList=[
     {
         id : "horse",
         requiring : "milk",
-        earning : 250,
+        earning : 100,
         startX : 1,
         startY : 11,
         willAddContent : true,
@@ -66,7 +66,7 @@ let structureList=[
     {
         id : "mayonnaiseMachine",
         requiring : "largeEgg",
-        earning: 750,
+        earning: 150,
         startX: 1,
         startY: 5,
         willAddContent: true,
@@ -96,7 +96,7 @@ let structureList=[
     {
         id : "oilMaker",
         requiring : "truffle",
-        earning : 500,
+        earning : 250,
         startX : 7,
         startY : 5,
         willAddContent : true,
@@ -106,7 +106,7 @@ let structureList=[
     {
         id : "beeHouse",
         requiring : "flower",
-        earning : 250,
+        earning : 220,
         startX : 9,
         startY : 5,
         willAddContent : true,
@@ -116,7 +116,7 @@ let structureList=[
     {
         id : "bear",
         requiring : "honey",
-        earning : 500,
+        earning : 250,
         startX : 1,
         startY : 8,
         willAddContent : false,
@@ -125,7 +125,7 @@ let structureList=[
     {
         id : "dinosaur",
         requiring : "largeEgg",
-        earning : 1000,
+        earning : 275,
         startX : 4,
         startY : 9,
         willAddContent : false,
@@ -134,7 +134,7 @@ let structureList=[
     {
         id : "ostrich",
         requiring : "sardine",
-        earning : 1200,
+        earning : 300,
         startX : 6,
         startY : 8,
         willAddContent : false,
@@ -143,7 +143,7 @@ let structureList=[
     {
         id : "wolf",
         requiring : "oil",
-        earning : 1500,
+        earning : 300,
         startX : 9,
         startY : 8,
         willAddContent : false,
@@ -152,7 +152,7 @@ let structureList=[
     {
         id : "fox",
         requiring : "truffle",
-        earning : 2000,
+        earning : 325,
         startX : 4,
         startY : 10.5,
         willAddContent : true,
@@ -162,7 +162,7 @@ let structureList=[
     {
         id : "ikun",
         requiring : "ring",
-        earning : 2500,
+        earning : 325,
         startX : 6,
         startY : 11.5,
         willAddContent : false,
