@@ -6,6 +6,7 @@ import { shopButtonList } from './shopButtonList';
 import * as sounds from './sounds';
 import * as PIXISound from '@pixi/sound';
 import * as ui from './ui';
+import * as random from './randomEvent'
 /**
  * 整个PIXI应用，所有的元素都应是这个应用的子元素
  * @type {PIXI.Application}
@@ -15,7 +16,7 @@ const app = new PIXI.Application({
 });
 
 // 版本号
-let versionNumber='alpha 1.2.0\npowered by 6lszxz, Xingxinyuxxy, qxr001, lzj26 and lwnzzz';
+let versionNumber='beta 1.1.1\npowered by 6lszxz, Xingxinyuxxy, qxr001, lzj26 and lwnzzz';
 
 // 以下都是系统流程中调用的函数
 /**
@@ -50,7 +51,7 @@ function init(){
     gameMap.shuffleAll();
     structureSystem.createToMap('sheep');
     shopButton.createPage(1);
-    //shopButton.createTurnPageButton();
+    shopButton.createTurnPageButton();
     app.stage.addChild(version);
     soundSystem.BGM();
 }
@@ -61,6 +62,7 @@ function init(){
  * @param tile {Tile}
  */
 function tapLoop(tile){
+    if(tile.isFrozen) return;//已冰冻
     getMove(tile,function (){
         tile.moveToBar();
         bar.checkMatch();
@@ -68,10 +70,24 @@ function tapLoop(tile){
         itemRequire.checkSuccesses();
         itemRequire.lastingTimeChanges(1);
         itemRequire.checkFails();
-        shopButton.checkCanBeBoughtAll();
         farmInformation.gameDate.pass();
         itemRequire.spawnRandomRequire();
+        shopButton.checkCanBeBoughtAll();
+        randomEvent.create();
+        randomEvent.achieve();
+        bar.refresh();
     });
+}
+
+
+function clearTile(tile){
+    if(tile.isFrozen) return; //已冰冻
+    getMove(tile,function (){
+        tile.moveToBar();
+        tile.removeFromBar();
+        bar.refresh();
+       gameMap.fallAndCreate(tile.x,tile.y);
+   });
 }
 
 // 以下都是需要的类
@@ -118,7 +134,7 @@ class Tile {
         if(id==='random'){
             do{
                 this.id = Tile.types[Math.floor(Math.random()*(Tile.types.length))];
-            }while(gameMap.checkId(this.id) || !Tile.typesNow.has(this.id));
+            }while( !Tile.typesNow.has(this.id));
         }else {
             this.id = id;
         }
@@ -140,11 +156,15 @@ class Tile {
         gameMap.tileLists.set(`${this.x},${this.y}`,this);
         this.itself.on('pointertap', ()=>{
             tapLoop(this);
+            // this.frozen(2,true);//冻结第一行
+            // this.clearTiles(2,true);//消除第一行
+            // this.clearTypeTile("apple");//消除apple种类
         });
         let lastNumber = gameMap.typeNumbers.get(this.id);
         lastNumber++;
         gameMap.typeNumbers.set(this.id,lastNumber);
         gameMap.itself.addChild(this.itself);//创建
+        this.isFrozen = false;
     }
     /**
      * 把当前块传入到合成槽中
@@ -175,11 +195,7 @@ class Tile {
         gameMap.typeNumbers.set(this.id,tempNumber);
         bar.itself.addChild(this.itself);//创建对象到合成槽中
         this.itself.interactive=false;
-
     }
-
-
-
     /**
      * 把当前块从合成槽中移除
      */
@@ -198,7 +214,58 @@ class Tile {
         tempNumber--;
         bar.typeNumbers.set(id,tempNumber);
     }
+     /**
+     * 冰冻某行或者某列元素
+     * frozen(1,true); 冻结第一行
+     * frozen(1); 冻结第一列
+     */
+    static frozen(index,type){
+        if(type){//行
+            for(let i = 1; i < 7; i++){
+                let v = gameMap.tileLists.get(i+","+index);
+                v.isFrozen = true;
+            }
+        }else{//列
+            for(let i = 1; i < 7; i++){
+                let v = gameMap.tileLists.get(index+","+i);
+                v.isFrozen = true;
+            }
+        }
+    }
+    /**
+     * 消除一行或者一列 index 索引,type 选择行列
+     * clearTile(2,true); 消除第二行
+     * clearTile(2); //消除第二列
+     */
+    static clearTiles(index,type){
+        if(type){//行
+            for(let i = 1; i < 7; i++){
+                let v = gameMap.tileLists.get(i+","+index);
+                clearTile(v);
+                // gameMap.fallAndCreate(v.x,v.y);
+            }
+        }else{//列
+            for(let i = 1; i < 7; i++){
+                let v = gameMap.tileLists.get(index+","+i);
+                clearTile(v);
+            }
+        }
+    }
+    /**
+     * 消除屏幕上特定种类的所有元素 type类型
+     * clearTypeTile("apple"); 消除苹果种类
+     */
+    static clearTypeTile(type){
+        console.log(gameMap.tileLists);
+        gameMap.tileLists.forEach((t)=>{
+            if(t.id === type){
+                console.log(t);
+                clearTile(t);
+            }
+        });
+    }
 }
+
 /**
  * 结构体系统类，该类中全是静态方法，因为具体的结构实例可以在structueList中自定义
  */
@@ -352,6 +419,7 @@ class itemRequire{
             let structure = structureSystem.getStructureById(this.from);
             structure.onRequiringNow = false;
             farmInformation.coinBoard.change(this.earning);
+            systemValue.score+=this.earning;
             farmArea.itself.removeChild(this.itself);
             itemRequire.requiringNow.delete(this);
         }
@@ -392,6 +460,15 @@ class shopButton{
      * 用来记录商店目前的页数
      */
     static nowPageNum = 1;
+    static totalPages  = shopButton.caculateTatalPage();//记录总页数
+    static caculateTatalPage() {
+        if (shopButton.buttonsNumber % 5 == 0) {
+            shopButton.totalPages = shopButton.buttonsNumber / 5;
+        } else {
+            shopButton.totalPages = shopButton.buttonsNumber / 5 + 1;
+        }
+        return shopButton.totalPages;
+    }
     /**
      * 把当前页面所有的商店按钮显示在游戏中
      */
@@ -399,30 +476,33 @@ class shopButton{
         for(let i = (pageNum-1)*5;i<(pageNum-1)*5+5;i++){
             let buttonNow = shopButtonList[i];
             shopButton.create(buttonNow,i);
+            shopButton.checkCanBeBought(buttonNow);
         }
     }
     static create(buttonNow,i){
-        buttonNow.isBought = false;
-        buttonNow.canBeBought = false;
-        buttonNow.itself = new PIXI.Sprite.from(ui.shopButtonImg);
-        buttonNow.itself.zIndex =10;
-        buttonNow.itself.position.set(0,systemValue.toMapY(i===0?i+1:i*2+1));
-        shopArea.itself.addChild(buttonNow.itself);
-        buttonNow.titleText = new PIXI.Text(`${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`);
-        buttonNow.titleText.position.set(10,0);
-        buttonNow.titleText.zIndex =15;
-        buttonNow.itself.addChild(buttonNow.titleText);
-        buttonNow.itself.on('pointertap',()=>{
-            if(farmInformation.coinBoard.coin>=buttonNow.cost && (!buttonNow.isBought)){
-                if(buttonNow.type === 'structure'){
-                    structureSystem.createToMap(buttonNow.name);
+            buttonNow.itself = new PIXI.Sprite.from(ui.shopButtonImg);
+            buttonNow.itself.zIndex = 10;
+            buttonNow.itself.position.set(0, systemValue.toMapY(i % 5 === 0 ? i % 5 + 1 : i % 5 * 2 + 1));
+            shopArea.itself.addChild(buttonNow.itself);
+            buttonNow.titleText = new PIXI.Text(`${buttonNow.zhName}\n 花费：${buttonNow.cost}，现在没钱`);
+            buttonNow.titleText.position.set(0.5, 0);
+            buttonNow.titleText.zIndex = 15;
+            buttonNow.itself.addChild(buttonNow.titleText);
+            buttonNow.itself.on('pointertap', () => {
+                if (farmInformation.coinBoard.coin >= buttonNow.cost && (!buttonNow.isBought)) {
+                    if (buttonNow.type === 'structure') {
+                        structureSystem.createToMap(buttonNow.name);
+                    }
+                    farmInformation.coinBoard.change(-(buttonNow.cost));
+                    buttonNow.titleText.text = `${buttonNow.zhName}\n 已购买`
+                    buttonNow.isBought = true;
+                    shopButton.checkCanBeBoughtAll();
                 }
-                farmInformation.coinBoard.change(-(buttonNow.cost));
-                buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
-                buttonNow.isBought = true;
-                shopButton.checkCanBeBoughtAll();
-            }
-        });
+            });
+    }
+    static delete(buttonNow){
+        shopArea.itself.removeChild(buttonNow.itself);
+        buttonNow.itself.removeChild(buttonNow.titleText);
     }
     /**
      * 创建翻页按钮
@@ -432,63 +512,58 @@ class shopButton{
         let prePage = new PIXI.Graphics();
         prePage.beginFill(0xFFFF00);
         prePage.zIndex =10;
-        prePage.position.set(0,systemValue.size*11.5);
-        prePage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
+        prePage.position.set(0,systemValue.size*10.5);
+        prePage.drawRect(0,0,systemValue.size*3,systemValue.size);
         shopArea.itself.addChild(prePage);
-        let prePageTitleText = new Text('上一页');
+        let prePageTitleText = new PIXI.Text('上一页');
         prePage.addChild(prePageTitleText);
-        prePageTitleText.position.set(5,0);
+        prePageTitleText.position.set(30,5);
         prePageTitleText.zIndex = 15;
         prePage.interactive = true;
+        prePage.buttonMode = true;
         //点击事件
-        prePage.on("pointerdown", onButtonDown1);
-        function onButtonDown1(){
+        prePage.on('pointertap', ()=>
+        {
+            console.log("点击成功");
             for(let i = (shopButton.nowPageNum-1)*5;i<(shopButton.nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
-                buttonNow.itself.removeChild(buttonNow.itself);
-                buttonNow.titleText.removeChild(buttonNow.titleText);
+                shopButton.delete(buttonNow);
             }
-            if(shopButton.nowPageNum === 1){
+            if(shopButton.nowPageNum == 1){
                 shopButton.createPage(1);
             }
             else{
                 shopButton.createPage(shopButton.nowPageNum-1);
                 shopButton.nowPageNum-=1;
             }
-        }
+        });
         let nxtPage = new PIXI.Graphics();
-        nxtPage.beginFill(0xFFFF00);
+        nxtPage.beginFill(0x00FF00);
         nxtPage.zIndex =10;
-        nxtPage.position.set(systemValue.size*3,systemValue.size*11.5);
-        nxtPage.drawRect(0,0,systemValue.size*3,systemValue.size*0.5);
+        nxtPage.position.set(systemValue.size*3,systemValue.size*10.5);
+        nxtPage.drawRect(0,0,systemValue.size*3,systemValue.size);
         shopArea.itself.addChild(nxtPage);
-        let nxtPageTitleText = new Text('下一页');
-        nxtPage.addChild(nxtPageTitleText);
-        nxtPageTitleText.position.set(5,0);
+        let nxtPageTitleText = new PIXI.Text('下一页');
+        nxtPageTitleText.position.set(30,5);
         nxtPageTitleText.zIndex = 15;
+        nxtPage.addChild(nxtPageTitleText);
         nxtPage.interactive = true;
-        nxtPage.on("pointerdown", onButtonDown2)
-        function onButtonDown2(){
-            let totalPages ;//记录总页数
-            if(shopButton.buttonsNumber%5 ===  0){
-                totalPages = shopButton.buttonsNumber/5;
-            }
-            else{
-                totalPages = shopButton.buttonsNumber/5+1;
-            }
+        nxtPage.buttonMode = true;
+        nxtPage.on('pointertap', ()=>
+        {
+            console.log("点击成功");
             for(let i = (shopButton.nowPageNum-1)*5;i<(shopButton.nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
-                buttonNow.itself.removeChild(buttonNow.itself);
-                buttonNow.titleText.removeChild(buttonNow.titleText);
+                shopButton.delete(buttonNow);
             }
-            if(shopButton.nowPageNum === totalPages){
-                shopButton.createPage(totalPages);
+            if(shopButton.nowPageNum == shopButton.totalPages){
+                shopButton.createPage(shopButton.totalPages);
             }
             else{
-                shopButton.createPage(shopButton.nowPageNum-1);
+                shopButton.createPage(shopButton.nowPageNum+1);
                 shopButton.nowPageNum+=1;
             }
-        }
+        });
     }
     /**
      * 检测是否达到了购买的条件
@@ -501,16 +576,16 @@ class shopButton{
     }
     static checkCanBeBought(buttonNow){
         if(buttonNow.isBought){
-            buttonNow.titleText.text= `${buttonNow.name}\n 已购买`
+            buttonNow.titleText.text= `${(buttonNow.zhName)}\n 已购买`
             return;
         }
         if(farmInformation.coinBoard.coin<buttonNow.cost && !buttonNow.isBought){
-            buttonNow.titleText.text= `${buttonNow.name}\n 花费：${buttonNow.cost}，现在没钱`
+            //buttonNow.titleText.text= `${switchJSONToName(buttonNow.name)}\n 花费：${buttonNow.cost}，现在没钱`
             buttonNow.canBeBought = false;
             return;
         }
         if(farmInformation.coinBoard.coin>=buttonNow.cost && (!buttonNow.isBought)){
-            buttonNow.titleText.text= `${buttonNow.name}\n 花费：${buttonNow.cost}，点击购买`
+            buttonNow.titleText.text= `${buttonNow.zhName}\n 花费：${buttonNow.cost}，点击购买`
             buttonNow.canBeBought = true;
             buttonNow.itself.interactive = true;
         }
@@ -543,7 +618,9 @@ let systemValue={
     toMapY(y){
         return (y-1)*systemValue.size;
     },
+    score: 0,
 }
+
 /**
  * 游戏舞台，放所有者东西的地方
  * @type {{positionY: number, itself: Container, create(): void, positionX: number}}
@@ -607,12 +684,16 @@ let farmInformation ={
      * @property itself PIXI.Text 金币的文本
      * @property create function 创建到画面上
      * @property change function 改变所持的金币值，正数为增负数为减
+     * isDoubleCoin  随机事件动物心情好，下一次需求满足奖励翻倍
+     * isDestructio  随机事件动物破坏财物，扣25
      */
     coinBoard : {
         startX : 10,
         startY : 10,
         itself : new PIXI.Text(),
         coin : 50,
+        isDoubleCoin: false,
+        isDestruction: false,
         create(){
             this.itself.position.set(this.startX,this.startY);
             farmInformation.itself.addChild(this.itself);
@@ -621,7 +702,17 @@ let farmInformation ={
         change(value){
             console.log(value);
             console.log(this.coin)
-            this.coin += value;
+            if(this.isDoubleCoin===true){
+                this.coin+=value*2;
+                this.isDoubleCoin=false;
+            }else {
+                this.coin += value;
+            }
+            if(this.isDestruction===true){
+                this.coin-=25;
+                this.isDestruction=false;
+            }
+
             this.itself.text = `金币：${this.coin}`;
         }
     },
@@ -702,9 +793,6 @@ let gameMap={
             }
         }
     },
-    checkId(id){
-        return gameMap.typeNumbers.get(id)>=3;
-    }
 }
 /**
  * 合成槽
@@ -750,6 +838,7 @@ let bar={
         for(let i=0;i<Tile.types.length;i++){
             let tempNumber = bar.typeNumbers.get(Tile.types[i]);
             if(tempNumber>=3){
+                systemValue.score +=100;
                 while(tempNumber!==0){
                     for(let tile of bar.tileLists.values()){
                         if(tile.id ===Tile.types[i]){
@@ -798,19 +887,19 @@ let shopArea={
 /**
  * 实现动画效果
  */
-function getMove(a,callback){//传入参数为具体的方格，在合成槽放的第几个位置
+function getMove(a, callback) {//传入参数为具体的方格，在合成槽放的第几个位置
     soundSystem.clickMusic();
     let isAddedBefore = false;
-    let endatat=0;//记录在合成槽的第几个放元素
-    for(let i=1;i<=bar.lengthNow;i++){
-        if(bar.tileLists.get(i).id ===a.id ){
+    let endatat = 0;//记录在合成槽的第几个放元素
+    for (let i = 1; i <= bar.lengthNow; i++) {
+        if (bar.tileLists.get(i).id === a.id) {
             isAddedBefore = true;
-            endatat=i+1;
+            endatat = i + 1;
             break;
         }
     }
-    if(!isAddedBefore){
-        endatat=bar.lengthNow+1;
+    if (!isAddedBefore) {
+        endatat = bar.lengthNow + 1;
     }
     let endx=(endatat-1)*48-24;//合成槽在方格的对应坐标
     let endy=312;//同上,312
@@ -829,10 +918,10 @@ function getMove(a,callback){//传入参数为具体的方格，在合成槽放�
                 walkx = Math.floor(walkx);
             }
             var walky = (endy - ay) / 3;
-            if (walky> 0) {
+            if (walky > 0) {
                 walky = Math.ceil(walky);
             } else {
-                walky= Math.floor(walky);
+                walky = Math.floor(walky);
             }
             a.itself.zIndex=10;
             a.itself.position.set(ax+walkx,ay+walky);
@@ -841,8 +930,11 @@ function getMove(a,callback){//传入参数为具体的方格，在合成槽放�
             ay+=walky;
         }
 
-    },20)
+    }, 20)
 }
+/**
+ * 背景音乐
+ */
 let soundSystem={
     init(){
         PIXISound.sound.add('click',sounds.soundTapTile);
@@ -858,7 +950,6 @@ let soundSystem={
         let BGMrandom=['BGM1','BGM2','BGM3','BGM4','BGM5','BGM6','BGM7'];
         let i=getRandomInt(0,6);
         PIXISound.sound.play(BGMrandom[i],soundSystem.BGM);
-
     },
     clickMusic(){
         PIXISound.sound.play('click');
@@ -869,8 +960,12 @@ let RuleArea={
     itself: new PIXI.Sprite.from(ui.ruleImg),
     button: new PIXI.Text('开始吧！'),
     create(){
-        this.itself.position.set(window.innerWidth/16, window.innerHeight/16);
-        this.button.position.set(window.innerWidth/2,window.innerHeight*15/16);
+	this.itself.scale.x *= 1.5;
+        this.itself.scale.y *= 1.5;
+        this.itself.position.set(0, 0);
+	this.button.scale.x *= 2;
+        this.button.scale.y *= 2;
+        this.button.position.set(window.innerWidth+150, 600);
         app.stage.addChild(this.itself);
         app.stage.addChild(this.button);
         this.button.interactive = true;
@@ -885,7 +980,7 @@ let RuleArea={
 let initArea={
     logo : {
         itself : new PIXI.Sprite.from(ui.logoImg),
-        positionX : window.innerWidth/2 - 518/2*systemValue.scaleX,
+	positionX : (window.innerWidth+518/4)/2,
         positionY : window.innerHeight/3,
         create(){
             this.itself.position.set(this.positionX, this.positionY);
@@ -897,7 +992,7 @@ let initArea={
     },
     button : {
         itself : new PIXI.Text('开始游戏'),
-        positionX : window.innerWidth/2,
+	positionX : ((window.innerWidth+518/4)/2)*5/4,
         positionY : window.innerHeight*2/3,
         create(){
             this.itself.position.set(this.positionX, this.positionY);
@@ -927,5 +1022,68 @@ function getRandomInt(min, max) {
     return rand1;
 }
 
+/**
+ * 随机事件
+ * *create() 显示随机事件
+ * achieve() 实现随机事件的效果
+ * randomNumber  记录要显示随机事件的序号 也可以控制出现的概率
+ * button 继续游戏
+ * isColdWave 随机事件  寒潮  默认冻结 5 回合
+ */
+
+let randomEvent={
+    button: new PIXI.Text('继续游戏'),
+    isColdWave: 0,
+    create() {
+        this.randomNumble = getRandomInt(Infinity, Infinity);//调最大值即可实现概率,1到5为出现
+        if (this.randomNumble >= 0 && this.randomNumble <= 5) {
+            //在随机事件图片出现时不能点击地图
+            for (let i = 1; i <= 6; i++) {
+                for (let j = 1; j <= 6; j++) {
+                    let tempTile = gameMap.tileLists.get(`${i},${j}`);
+                    tempTile.itself.interactive = false;
+                }
+            }
+            this.itself = new PIXI.Sprite.from(random[`random0${this.randomNumble}`]);
+            this.x = farmArea.endPositionX + systemValue.size * 6;
+            this.y = gameMap.startY + systemValue.size * 1;
+            this.itself.position.set(this.x, this.y);//图片位置
+            this.itself.width = 520;
+            this.itself.height = 430;
+            this.button.position.set(this.x + this.itself.width / 2.5, this.y + this.itself.height + 20);//"继续游戏"位置
+            app.stage.addChild(this.itself);
+            app.stage.addChild(this.button);
+            this.button.interactive = true;
+            this.button.on('pointertap', () => {
+                app.stage.removeChild(this.itself);
+                app.stage.removeChild(this.button);
+                for (let i = 1; i <= 6; i++)//恢复
+                {
+                    for (let j = 1; j <= 6; j++) {
+                        let tempTile = gameMap.tileLists.get(`${i},${j}`);
+                        tempTile.itself.interactive = true;
+                    }
+                }
+            });
+        }
+    },
+    achieve(){
+        if(this.randomNumble>=0&&this.randomNumble<=5)
+        {
+            if(this.randomNumble===1){//小麦贼
+                Tile.clearTypeTile('wool');
+            }else if(this.randomNumble===2){//动物破坏了他人财物,扣25
+                farmInformation.coinBoard.isDestruction=true;
+            }else if(this.randomNumble===3){//寒潮  冻结 5 回合
+
+            }else if(this.randomNumble===4){//动物心情好,下一次需求奖励的钱翻倍
+                farmInformation.coinBoard.isDoubleCoin=true;
+
+            }else {//收购商请喝茶
+
+            }
+        }
+    }
+}
 export {createApp,};
 
