@@ -9,7 +9,9 @@
   },
   "dependencies": {
     "@pixi/sound": "^5.0.0",
+    "axios": "^1.2.1",
     "core-js": "^3.8.3",
+    "pixi-text-input": "^1.0.6",
     "pixi-tween": "^0.2.0",
     "pixi.js": "^6.5.6",
     "vue": "^3.2.13"
