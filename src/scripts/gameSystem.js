@@ -5,8 +5,10 @@ import { structureList } from './structureList';
 import { shopButtonList } from './shopButtonList';
 import * as sounds from './sounds';
 import * as PIXISound from '@pixi/sound';
+import * as PIXIInput from 'pixi-text-input'
 import * as ui from './ui';
 import * as random from './randomEvent'
+import axios from "axios";
 /**
  * 整个PIXI应用，所有的元素都应是这个应用的子元素
  * @type {PIXI.Application}
@@ -16,7 +18,7 @@ const app = new PIXI.Application({
 });
 
 // 版本号
-let versionNumber='beta 1.1.1\npowered by 6lszxz, Xingxinyuxxy, qxr001, lzj26 and lwnzzz';
+let versionNumber='beta 1.2.0\npowered by 6lszxz, Xingxinyuxxy, qxr001, lzj26 and lwnzzz';
 
 // 以下都是系统流程中调用的函数
 /**
@@ -36,6 +38,7 @@ function createApp(){
     app.renderer.autoResize = true;
     app.renderer.resize(window.innerWidth,window.innerHeight);
     app.stage.interactive = true;
+    gameStage.create();
     initArea.create();
     app.stage.scale.set(systemValue.scaleX,systemValue.scaleY);
 }
@@ -47,7 +50,7 @@ function init(){
     soundSystem.init();
     let version = new PIXI.Text(versionNumber);
     Tile.loadContents();
-    gameStage.create();
+    gameStage.init();
     gameMap.shuffleAll();
     structureSystem.createToMap('sheep');
     shopButton.createPage(1);
@@ -76,6 +79,7 @@ function tapLoop(tile){
         randomEvent.create();
         randomEvent.achieve();
         bar.refresh();
+        farmInformation.checkGameOver();
     });
 }
 
@@ -134,7 +138,7 @@ class Tile {
         if(id==='random'){
             do{
                 this.id = Tile.types[Math.floor(Math.random()*(Tile.types.length))];
-            }while( !Tile.typesNow.has(this.id));
+            }while(gameMap.checkId(this.id) || !Tile.typesNow.has(this.id));
         }else {
             this.id = id;
         }
@@ -186,7 +190,6 @@ class Tile {
         }
         bar.lengthNow++;
         bar.refresh();
-        console.log(bar.tileLists);
         let lastNumber = bar.typeNumbers.get(this.id);
         lastNumber++;
         bar.typeNumbers.set(this.id,lastNumber);
@@ -256,10 +259,8 @@ class Tile {
      * clearTypeTile("apple"); 消除苹果种类
      */
     static clearTypeTile(type){
-        console.log(gameMap.tileLists);
         gameMap.tileLists.forEach((t)=>{
             if(t.id === type){
-                console.log(t);
                 clearTile(t);
             }
         });
@@ -339,7 +340,6 @@ class itemRequire{
      * 整个地图中随机产生需求，每个回合都有1/4的几率产生，每次只会产生一个，地图同时存在的需求不会超过当前结构数量的一半
      */
     static spawnRandomRequire(){
-        console.log(`${itemRequire.requiringNow.size} ${structureSystem.structureNow.size/2}`)
         if(Math.floor(Math.random()*4)===1 && itemRequire.requiringNow.size< structureSystem.structureNow.size/2){
             let tempNumber = Math.floor(Math.random()*structureSystem.structureNow.size);
             let i=0;
@@ -419,7 +419,7 @@ class itemRequire{
             let structure = structureSystem.getStructureById(this.from);
             structure.onRequiringNow = false;
             farmInformation.coinBoard.change(this.earning);
-            systemValue.score+=this.earning;
+            systemValue.score.change(this.earning);
             farmArea.itself.removeChild(this.itself);
             itemRequire.requiringNow.delete(this);
         }
@@ -524,7 +524,6 @@ class shopButton{
         //点击事件
         prePage.on('pointertap', ()=>
         {
-            console.log("点击成功");
             for(let i = (shopButton.nowPageNum-1)*5;i<(shopButton.nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
                 shopButton.delete(buttonNow);
@@ -551,7 +550,6 @@ class shopButton{
         nxtPage.buttonMode = true;
         nxtPage.on('pointertap', ()=>
         {
-            console.log("点击成功");
             for(let i = (shopButton.nowPageNum-1)*5;i<(shopButton.nowPageNum-1)*5+5;i++){
                 let buttonNow = shopButtonList[i];
                 shopButton.delete(buttonNow);
@@ -618,7 +616,13 @@ let systemValue={
     toMapY(y){
         return (y-1)*systemValue.size;
     },
-    score: 0,
+    score: {
+        data:0,
+        change(value){
+            this.data+=value;
+            console.log(systemValue.score.data);
+        }
+    },
 }
 
 /**
@@ -636,12 +640,21 @@ let gameStage = {
     create(){
         this.itself.position.set(this.positionX, this.positionY);
         app.stage.addChild(this.itself);
+    },
+    init(){
         farmArea.create();
         gameMap.create();
         bar.create();
         farmInformation.create();
         shopArea.create();
     },
+    destroyOthers(){
+        this.itself.removeChild(farmArea.itself);
+        this.itself.removeChild(gameMap.itself);
+        this.itself.removeChild(bar.itself);
+        this.itself.removeChild(farmInformation.itself);
+        this.itself.removeChild(shopArea.itself);
+    }
 }
 /**
  * 牧场区域，是放结构和产生需求的地方
@@ -700,8 +713,6 @@ let farmInformation ={
             this.itself.text = `金币：${this.coin}`;
         },
         change(value){
-            console.log(value);
-            console.log(this.coin)
             if(this.isDoubleCoin===true){
                 this.coin+=value*2;
                 this.isDoubleCoin=false;
@@ -742,6 +753,12 @@ let farmInformation ={
         gameStage.itself.addChild(this.itself);
         this.coinBoard.create();
         this.gameDate.create();
+    },
+    checkGameOver() {
+        if (this.gameDate.year === 30) {
+            gameStage.destroyOthers();
+            overArea.create();
+        }
     }
 }
 
@@ -793,6 +810,9 @@ let gameMap={
             }
         }
     },
+    checkId(id){
+        return gameMap.typeNumbers.get(id)>=3;
+    }
 }
 /**
  * 合成槽
@@ -838,11 +858,10 @@ let bar={
         for(let i=0;i<Tile.types.length;i++){
             let tempNumber = bar.typeNumbers.get(Tile.types[i]);
             if(tempNumber>=3){
-                systemValue.score +=100;
+                systemValue.score.change(100);
                 while(tempNumber!==0){
                     for(let tile of bar.tileLists.values()){
                         if(tile.id ===Tile.types[i]){
-                            console.log(tile);
                             tile.removeFromBar();
                             break;
                         }
@@ -856,7 +875,6 @@ let bar={
         bar.checkFull();
     },
     checkFull(){
-        console.log(bar.tileLists)
         if(bar.lengthNow===bar.maxSize){
             farmInformation.coinBoard.change(-100);
             for(let i=7;i>2;i--){
@@ -958,21 +976,13 @@ let soundSystem={
 
 let RuleArea={
     itself: new PIXI.Sprite.from(ui.ruleImg),
-    button: new PIXI.Text('开始吧！'),
     create(){
-	this.itself.scale.x *= 1.5;
-        this.itself.scale.y *= 1.5;
         this.itself.position.set(0, 0);
-	this.button.scale.x *= 2;
-        this.button.scale.y *= 2;
-        this.button.position.set(window.innerWidth+150, 600);
-        app.stage.addChild(this.itself);
-        app.stage.addChild(this.button);
-        this.button.interactive = true;
-        this.button.on('pointertap',()=>{
-            init(),
-            app.stage.removeChild(this.itself);
-            app.stage.removeChild(this.button);
+        gameStage.itself.addChild(this.itself);
+        this.itself.interactive = true;
+        this.itself.on('pointertap',()=>{
+            init();
+            gameStage.itself.removeChild(this.itself);
         });
     }
 }
@@ -980,33 +990,23 @@ let RuleArea={
 let initArea={
     logo : {
         itself : new PIXI.Sprite.from(ui.logoImg),
-	positionX : (window.innerWidth+518/4)/2,
-        positionY : window.innerHeight/3,
+        positionX : 0,
+        positionY : 0,
         create(){
+            this.itself.zIndex=5;
             this.itself.position.set(this.positionX, this.positionY);
-            app.stage.addChild(this.itself);
+            gameStage.itself.addChild(this.itself);
         },
         destory(){
-            app.stage.removeChild(this.itself);
+            gameStage.itself.removeChild(this.itself)
         },
-    },
-    button : {
-        itself : new PIXI.Text('开始游戏'),
-	positionX : ((window.innerWidth+518/4)/2)*5/4,
-        positionY : window.innerHeight*2/3,
-        create(){
-            this.itself.position.set(this.positionX, this.positionY);
-            app.stage.addChild(this.itself);
-        }
     },
     create(){
         this.logo.create();
-        this.button.create();
-        this.button.itself.interactive = true;
-        this.button.itself.on('pointertap',()=>{
+        this.logo.itself.interactive = true;
+        this.logo.itself.on('pointertap',()=>{
             this.logo.destory();
             RuleArea.create();
-            app.stage.removeChild(this.button.itself);
         })
     }
 
@@ -1085,5 +1085,70 @@ let randomEvent={
         }
     }
 }
-export {createApp,};
 
+let overArea={
+    hint: new PIXI.Text(),
+    inputBox: new PIXIInput({
+        input: {
+            fontSize: '36px',
+            padding: '12px',
+            width: '500px',
+            color: '#26272E'
+        },
+        box: {
+            default: {fill: 0xE8E9F3, rounded: 12, stroke: {color: 0xCBCEE0, width: 3}},
+            focused: {fill: 0xE1E3EE, rounded: 12, stroke: {color: 0xABAFC6, width: 3}},
+            disabled: {fill: 0xDBDBDB, rounded: 12}
+        },
+    }),
+    data: [],
+    boardNow: {
+        boardText: new PIXI.Text('姓名：分数\n'),
+        getData(){
+            axios.get('/server/data.json')
+                .then( (response)=>{
+                    overArea.data = response.data;
+                    let size =overArea.data.length>=10?10:overArea.data.length;
+                    overArea.inputBox.position.set(0,70+size*50);
+                    for(let i=0;i<size;i++){
+                        this.boardText.text += `${overArea.data[i].name}：${overArea.data[i].score}\n`;
+                    }
+                })
+                .catch( (e)=>{
+                    this.boardText.text = `数据加载失败，请检查你的网络连接！\n${e}`;
+                });
+
+        },
+    },
+    create(){
+        this.hint.text =(`您的分数为：${systemValue.score.data}
+    在排行榜上留下你的名字吧`);
+        this.boardNow.getData();
+        this.inputBox.placeholder='写好名字按回车';
+        this.boardNow.boardText.position.set(0,70);
+        gameStage.itself.addChild(this.boardNow.boardText);
+        gameStage.itself.addChild(this.hint);
+        gameStage.itself.addChild(this.inputBox);
+        this.inputBox.on('keydown',(keycode)=>{
+            if(keycode===13){
+                overArea.data.push({
+                    name: this.inputBox.text,
+                    score: systemValue.score.data,
+                });
+                overArea.data.sort((a,b)=>{
+                    return b-a;
+                });
+                axios.post('/server/data.json',overArea.data)
+                    .then((response)=>{
+                        console.log(response.data);
+                        alert(`提交失败，请检查你的网络连接！`);
+                    })
+                    .catch( (e)=>{
+                    alert(`提交失败，请检查你的网络连接！\n${e}`);
+                });
+            }
+        })
+    },
+}
+
+export {createApp,};
